@@ -9,7 +9,7 @@ Coding conventions
 <tr><th>Paper<td>Program
 <tr><td><i>U</i><td><tt>repulsion
 <tr><td><i>t</i><td><tt>hopping
-<tr>μ<td><tt>chemical_potential
+<tr><td>μ<td><tt>chemical_potential
 </table>
 
 
