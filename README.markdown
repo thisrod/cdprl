@@ -6,7 +6,7 @@ Coding conventions
 ------------------
 
 <table>
-<tr><th>Paper<td>Program
+<tr><th>Paper<th>Program
 <tr><td><i>U</i><td><tt>repulsion
 <tr><td><i>t</i><td><tt>hopping
 <tr><td>μ<td><tt>chemical_potential
