@@ -1,1 +1,1 @@
-*Testing*
+The point of this is explained in the paper, which is available on [arXiv](http://arxiv.org/abs/quant-ph/0404052).
