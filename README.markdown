@@ -1,6 +1,10 @@
 The point of this is explained in [the paper](http://arxiv.org/abs/quant-ph/0404052).
 
-Feel free to suggest extra Green's functions as test cases.
+Review requests
+---------------
+
+* There must be a better way to write Simulator.__init__
+* Please suggest extra data to test
 
 Coding conventions
 ------------------

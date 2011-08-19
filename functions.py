@@ -7,19 +7,24 @@ from unittest import TestCase, main as run_tests
 class TestAccessing(TestCase):
 
 	def setUp(self):
-		self.specimen = Simulator(repulsion = 1, chemical_potential = 0.5, hopping = 2, timestep = 0.1)
+		self.original = Simulator(repulsion = 1, chemical_potential = 0.5, hopping = 2, timestep = 0.1)
+		self.copy = Simulator(self.original, hopping = 5)
 		
 	def testRepulsion(self):
-		self.assertEqual(self.specimen.repulsion, 1)
+		self.assertEqual(self.original.repulsion, 1)
+		self.assertEqual(self.copy.repulsion, 1)
 		
 	def testCP(self):
-		self.assertEqual(self.specimen.chemical_potential, 0.5)
+		self.assertEqual(self.original.chemical_potential, 0.5)
+		self.assertEqual(self.copy.chemical_potential, 0.5)
 		
 	def testHopping(self):
-		self.assertEqual(self.specimen.hopping, 2)
+		self.assertEqual(self.original.hopping, 2)
+		self.assertEqual(self.copy.hopping, 5)
 		
 	def testTimestep(self):
-		self.assertEqual(self.specimen.timestep, 0.1)
+		self.assertEqual(self.original.timestep, 0.1)
+		self.assertEqual(self.copy.timestep, 0.1)
 		
 		
 # Test data
@@ -103,11 +108,20 @@ class TestNoise(TestCase):
 
 class Simulator:
 
-	def __init__(self, repulsion, hopping, chemical_potential, timestep):
-		self.repulsion = repulsion
-		self.hopping = hopping
-		self.chemical_potential = chemical_potential
-		self.timestep = timestep
+	def __init__(self, model = None, **parameters):
+		if model:
+			self.repulsion = model.repulsion
+			self.hopping = model.hopping
+			self.chemical_potential = model.chemical_potential
+			self.timestep = model.timestep
+		if 'repulsion' in parameters:
+			self.repulsion = parameters['repulsion']
+		if 'hopping' in parameters:
+			self.hopping = parameters['hopping']
+		if 'chemical_potential' in parameters:
+			self.chemical_potential = parameters['chemical_potential']
+		if 'timestep' in parameters:
+			self.timestep = parameters['timestep']		
 		
 	def repulsion_terms(self, normal_greens, spin):
 		straight = diagonal(normal_greens[spin,:,:])
