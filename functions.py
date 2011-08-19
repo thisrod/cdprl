@@ -107,9 +107,6 @@ class TestDerivative(TestCase):
 			for noise1 in noise_specimens(greens.shape[1]):
 				for noise2 in noise_specimens(greens.shape[1]):
 					self.assertTrue((scaled_sltr.greens_dot(greens, spin, noise1, noise2) == scaled_sltr.greens_dot(greens, spin, noise1/sqrt(3), noise2/sqrt(3))).all())
-		
-		
-	
 								
 
 class TestNoise(TestCase):
