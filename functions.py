@@ -142,18 +142,8 @@ class Simulator:
 
 	def __init__(self, model = None, **parameters):
 		if model:
-			self.repulsion = model.repulsion
-			self.hopping = model.hopping
-			self.chemical_potential = model.chemical_potential
-			self.timestep = model.timestep
-		if 'repulsion' in parameters:
-			self.repulsion = parameters['repulsion']
-		if 'hopping' in parameters:
-			self.hopping = parameters['hopping']
-		if 'chemical_potential' in parameters:
-			self.chemical_potential = parameters['chemical_potential']
-		if 'timestep' in parameters:
-			self.timestep = parameters['timestep']		
+			self.__dict__ = model.__dict__.copy()
+		self.__dict__.update(parameters)
 		
 	def repulsion_terms(self, normal_greens, spin):
 		straight = diagonal(normal_greens[spin,:,:])
