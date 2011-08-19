@@ -1,6 +1,6 @@
 from math import sqrt
 from numpy.random import randn as normal_deviates
-from numpy import array, diagonal, diagflat as make_diagonal, zeros, identity as unit, logical_or
+from numpy import array, mat, diagonal, diagflat as make_diagonal, zeros, identity as unit, logical_or
 from unittest import TestCase, main as run_tests
 
 
@@ -90,8 +90,27 @@ class TestDelta(TestCase):
 		for sltr, greens, spin in specimens():
 			for noise in noise_specimens(greens.shape[1]):
 				self.assertTrue(is_tridiagonal(sltr.delta(greens, spin, noise)))
-	
 				
+				
+class TestDerivative(TestCase):
+
+	def testShape(self):
+		for sltr, greens, spin in specimens():
+			for noise1 in noise_specimens(greens.shape[1]):
+				for noise2 in noise_specimens(greens.shape[1]):
+					self.assertTrue(sltr.greens_dot(greens, spin, noise1, noise2).shape == greens[spin,:,:].shape)
+					
+	def testScaling(self):
+		"Tripling U and scaling the noise input by 1/sqrt(3) cancel out."
+		for sltr, greens, spin in specimens():
+			scaled_sltr = Simulator(sltr, repulsion = sltr.repulsion * 3)
+			for noise1 in noise_specimens(greens.shape[1]):
+				for noise2 in noise_specimens(greens.shape[1]):
+					self.assertTrue((scaled_sltr.greens_dot(greens, spin, noise1, noise2) == scaled_sltr.greens_dot(greens, spin, noise1/sqrt(3), noise2/sqrt(3))).all())
+		
+		
+	
+								
 
 class TestNoise(TestCase):
 
@@ -121,6 +140,8 @@ class TestNoise(TestCase):
 # Implementation
 
 class Simulator:
+
+	"Noise inputs are scaled by timestep, but not by U.  Think about that some more."
 
 	def __init__(self, model = None, **parameters):
 		if model:
@@ -154,9 +175,15 @@ class Simulator:
 			- make_diagonal( \
 				self.repulsion_terms(normal_greens, spin) \
 				- self.chemical_potential \
-				+ f * noise)
+				+ f * sqrt(2*abs(self.repulsion)) * noise)
 				
-	def n_dot(self, normal_greens, spin, noise1, noise2): pass
+	def greens_dot(self, normal_greens, spin, noise1, noise2):
+		n = normal_greens[spin,:,:]
+		particles = mat(n)
+		holes = mat(unit_like(n) - n)
+		delta1 = mat(self.delta(normal_greens, spin, noise1))
+		delta2 = mat(self.delta(normal_greens, spin, noise2))
+		return 0.5*(holes*delta1*particles + particles*delta2*holes)
 	
 
 def noise(sites, timestep):
@@ -171,6 +198,8 @@ def is_tridiagonal(A):
 def zero(n):
 	return zeros([n, n])
 
+def unit_like(array):
+	return unit(array.shape[0])
 
 if __name__ == '__main__':
     run_tests()

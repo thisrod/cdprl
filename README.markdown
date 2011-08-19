@@ -4,7 +4,13 @@ Review requests
 ---------------
 
 * There must be a better way to write Simulator.__init__
-* Please suggest extra data to test
+* Please suggest extra Greens functions to test
+* TestDelta and TestDerivative aren't nearly thorough enough
+
+Issues
+------
+
+Where should the noise be scaled by repulsion?
 
 Coding conventions
 ------------------
@@ -14,6 +20,7 @@ Coding conventions
 <tr><td><i>U</i><td><tt>repulsion
 <tr><td><i>t</i><td><tt>hopping
 <tr><td>μ<td><tt>chemical_potential
+<tr><td><i>n</i><td><tt>normal_greens
 </table>
 
 
