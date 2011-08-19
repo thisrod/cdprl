@@ -27,6 +27,15 @@ class TestAccessing(TestCase):
 def greens_specimens():
 	for it in [unit(2), unit(2)], [zero(2), unit(2)], [unit(2), zero(2)]:
 		yield array(it)
+		
+def simulator_specimens():
+	yield Simulator(repulsion = 1, chemical_potential = 0.5, hopping = 2, timestep = 0.1)
+	yield Simulator(repulsion = 3, chemical_potential = 0.5, hopping = 2, timestep = 0.1)
+	
+def specimens():
+	for greens in greens_specimens():
+		for spin in 0, 1:
+			yield greens, spin
 	
 	
 class TestRepulsionTerms(TestCase):
@@ -40,8 +49,7 @@ class TestRepulsionTerms(TestCase):
 	def testSpinFlip(self):
 		"Flipping the spin of all particles doesn't change the repulsion"
 		
-		for specimen in greens_specimens():
-			for spin in range(2):
+		for specimen, spin in specimens():
 				straight = self.sltr.repulsion_terms(specimen, spin)
 				flipped = self.sltr.repulsion_terms(specimen[::-1, :, :], spin)
 				self.assertTrue((straight == flipped).all())
@@ -49,8 +57,7 @@ class TestRepulsionTerms(TestCase):
 	def testScaling(self):
 		"Tripling U triples the repulsion term"
 		
-		for specimen in greens_specimens():
-			for spin in range(2):
+		for specimen, spin in specimens():
 				weak = self.sltr.repulsion_terms(specimen, spin)
 				strong = self.sltr_strong.repulsion_terms(specimen, spin)
 				self.assertTrue((3*weak == strong).all())
@@ -58,13 +65,12 @@ class TestRepulsionTerms(TestCase):
 	def testOverlap(self):
 		"Repulsion term is uniformly 1/2 unless two particles share a site."
 		
-		for specimen in greens_specimens():
-			for spin in range(2):
+		for specimen, spin in specimens():
 				if logical_or(specimen[0,:,:] == 0, specimen[1,:,:] == 0).all():
 					self.assertTrue((self.sltr.repulsion_terms(specimen, spin) == 0.5).all())
 
 
-class TestDelta(TestCase): pass
+class TestDelta(TestCase):
 	
 	def testTridiagonal(self): pass
 		
