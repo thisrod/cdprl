@@ -36,6 +36,9 @@ def greens_specimens():
 def simulator_specimens():
 	yield Simulator(repulsion = 1, chemical_potential = 0.5, hopping = 2, timestep = 0.1)
 	
+def noise_specimens(sites):
+	yield zeros(sites)
+	
 def specimens():
 	for sltr in simulator_specimens():
 		for greens in greens_specimens():
@@ -46,6 +49,10 @@ def specimens():
 class TestRepulsionTerms(TestCase):
 
 	"Simulator.repulsion_terms(n, spin) computes |U|(s n_jj(-spin) - n_jj,spin + 1/2)"
+	
+	def testShape(self):
+		for sltr, greens, spin in specimens():
+			self.assertEqual(sltr.repulsion_terms(greens, spin).shape, greens.shape[1:2])
 
 	def testSpinFlip(self):
 		"Flipping the spin of all particles doesn't change the repulsion"
@@ -73,9 +80,16 @@ class TestRepulsionTerms(TestCase):
 
 
 class TestDelta(TestCase):
+
+	def testShape(self):
+		for sltr, greens, spin in specimens():
+			for noise in noise_specimens(greens.shape[1]):
+				self.assertTrue(sltr.delta(greens, spin, noise).shape == greens[spin,:,:].shape)
 	
-	def testTridiagonal(self): pass
-		
+	def testTridiagonal(self):
+		for sltr, greens, spin in specimens():
+			for noise in noise_specimens(greens.shape[1]):
+				self.assertTrue(is_tridiagonal(sltr.delta(greens, spin, noise)))
 	
 				
 
@@ -86,6 +100,9 @@ class TestNoise(TestCase):
 	def setUp(self):
 		self.sites = 10
 		
+	def testShape(self):
+		self.assertEqual(noise(self.sites, 1).shape, (self.sites,))
+			
 	def testDiagonal(self):
 		self.assertTrue(is_diagonal(noise(self.sites, 1)))
 	
@@ -125,8 +142,21 @@ class Simulator:
 		flipped = diagonal(normal_greens[1-spin,:,:])
 		return self.repulsion * flipped - abs(self.repulsion) * (0.5 - straight)
 
-	def delta(self, normal_greens, spin, noise): pass
-		
+	def delta(self, normal_greens, spin, noise):
+		sites = normal_greens.shape[1]
+		if spin == 1:
+			f = 1
+		else:
+			f = -self.repulsion/abs(self.repulsion)
+		return \
+			make_diagonal([self.hopping]*(sites-1), 1) \
+			+ make_diagonal([self.hopping]*(sites-1), -1) \
+			- make_diagonal( \
+				self.repulsion_terms(normal_greens, spin) \
+				- self.chemical_potential \
+				+ f * noise)
+				
+	def n_dot(self, normal_greens, spin, noise1, noise2): pass
 	
 
 def noise(sites, timestep):
@@ -136,7 +166,7 @@ def is_diagonal(A):
 	return (make_diagonal(diagonal(A)) == A).all()
 	
 def is_tridiagonal(A):
-	return (make_diagonal(diagonal(A,-1)) + make_diagonal(diagonal(A)) + make_diagonal(diagonal(A,1)) == A).all()
+	return (make_diagonal(diagonal(A,-1),-1) + make_diagonal(diagonal(A)) + make_diagonal(diagonal(A,1),1) == A).all()
 	
 def zero(n):
 	return zeros([n, n])
