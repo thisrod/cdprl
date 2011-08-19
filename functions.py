@@ -35,44 +35,41 @@ def greens_specimens():
 		
 def simulator_specimens():
 	yield Simulator(repulsion = 1, chemical_potential = 0.5, hopping = 2, timestep = 0.1)
-	yield Simulator(repulsion = 3, chemical_potential = 0.5, hopping = 2, timestep = 0.1)
 	
 def specimens():
-	for greens in greens_specimens():
-		for spin in 0, 1:
-			yield greens, spin
+	for sltr in simulator_specimens():
+		for greens in greens_specimens():
+			for spin in 0, 1:
+				yield sltr, greens, spin
 	
 	
 class TestRepulsionTerms(TestCase):
 
 	"Simulator.repulsion_terms(n, spin) computes |U|(s n_jj(-spin) - n_jj,spin + 1/2)"
 
-	def setUp(self):
-		self.sltr = Simulator(repulsion = 1, chemical_potential = 0.5, hopping = 2, timestep = 0.1)
-		self.sltr_strong = Simulator(repulsion = 3, chemical_potential = 0.5, hopping = 2, timestep = 0.1)
-
 	def testSpinFlip(self):
 		"Flipping the spin of all particles doesn't change the repulsion"
 		
-		for specimen, spin in specimens():
-				straight = self.sltr.repulsion_terms(specimen, spin)
-				flipped = self.sltr.repulsion_terms(specimen[::-1, :, :], spin)
-				self.assertTrue((straight == flipped).all())
+		for sltr, greens, spin in specimens():
+			straight = sltr.repulsion_terms(greens, spin)
+			flipped = sltr.repulsion_terms(greens[::-1, :, :], spin)
+			self.assertTrue((straight == flipped).all())
 				
 	def testScaling(self):
 		"Tripling U triples the repulsion term"
 		
-		for specimen, spin in specimens():
-				weak = self.sltr.repulsion_terms(specimen, spin)
-				strong = self.sltr_strong.repulsion_terms(specimen, spin)
-				self.assertTrue((3*weak == strong).all())
+		for sltr, greens, spin in specimens():
+			triple_sltr = Simulator(sltr, repulsion = 3*sltr.repulsion)
+			weak = sltr.repulsion_terms(greens, spin)
+			strong = triple_sltr.repulsion_terms(greens, spin)
+			self.assertTrue((3*weak == strong).all())
 				
 	def testOverlap(self):
-		"Repulsion term is uniformly 1/2 unless two particles share a site."
+		"All repulsion terms are 1/2 unless two particles share a site."
 		
-		for specimen, spin in specimens():
-				if logical_or(specimen[0,:,:] == 0, specimen[1,:,:] == 0).all():
-					self.assertTrue((self.sltr.repulsion_terms(specimen, spin) == 0.5).all())
+		for sltr, greens, spin in specimens():
+			if logical_or(greens[0,:,:] == 0, greens[1,:,:] == 0).all():
+				self.assertTrue((sltr.repulsion_terms(greens, spin) == 0.5).all())
 
 
 class TestDelta(TestCase):
