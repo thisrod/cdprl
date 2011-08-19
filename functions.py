@@ -25,10 +25,8 @@ class TestAccessing(TestCase):
 # Test data
 
 def greens_specimens():
-	return {
-		"full": array( [unit(2), unit(2)] ),
-		"all up": array( [zero(2), unit(2)] ),
-		"all down": array( [unit(2), zero(2)] ) }
+	for it in [unit(2), unit(2)], [zero(2), unit(2)], [unit(2), zero(2)]:
+		yield array(it)
 	
 	
 class TestRepulsionTerms(TestCase):
@@ -42,7 +40,7 @@ class TestRepulsionTerms(TestCase):
 	def testSpinFlip(self):
 		"Flipping the spin of all particles doesn't change the repulsion"
 		
-		for specimen in greens_specimens().values():
+		for specimen in greens_specimens():
 			for spin in range(2):
 				straight = self.sltr.repulsion_terms(specimen, spin)
 				flipped = self.sltr.repulsion_terms(specimen[::-1, :, :], spin)
@@ -51,7 +49,7 @@ class TestRepulsionTerms(TestCase):
 	def testScaling(self):
 		"Tripling U triples the repulsion term"
 		
-		for specimen in greens_specimens().values():
+		for specimen in greens_specimens():
 			for spin in range(2):
 				weak = self.sltr.repulsion_terms(specimen, spin)
 				strong = self.sltr_strong.repulsion_terms(specimen, spin)
@@ -60,7 +58,7 @@ class TestRepulsionTerms(TestCase):
 	def testOverlap(self):
 		"Repulsion term is uniformly 1/2 unless two particles share a site."
 		
-		for specimen in greens_specimens().values():
+		for specimen in greens_specimens():
 			for spin in range(2):
 				if logical_or(specimen[0,:,:] == 0, specimen[1,:,:] == 0).all():
 					self.assertTrue((self.sltr.repulsion_terms(specimen, spin) == 0.5).all())
@@ -68,6 +66,8 @@ class TestRepulsionTerms(TestCase):
 
 class TestDelta(TestCase): pass
 	
+	def testTridiagonal(self): pass
+		
 	
 				
 
@@ -117,6 +117,9 @@ def noise(sites, timestep):
 	
 def is_diagonal(A):
 	return (make_diagonal(diagonal(A)) == A).all()
+	
+def is_tridiagonal(A):
+	return (make_diagonal(diagonal(A,-1)) + make_diagonal(diagonal(A)) + make_diagonal(diagonal(A,1)) == A).all()
 	
 def zero(n):
 	return zeros([n, n])
