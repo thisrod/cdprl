@@ -1,10 +1,10 @@
 from math import sqrt
 from numpy.random import randn as normal_deviates
 from numpy import array, diagonal, diagflat as make_diagonal, zeros, identity as unit, logical_or
-import unittest
+from unittest import TestCase, main as run_tests
 
 
-class TestAccessing(unittest.TestCase):
+class TestAccessing(TestCase):
 
 	def setUp(self):
 		self.specimen = Simulator(repulsion = 1, chemical_potential = 0.5, hopping = 2, timestep = 0.1)
@@ -20,24 +20,29 @@ class TestAccessing(unittest.TestCase):
 		
 	def testTimestep(self):
 		self.assertEqual(self.specimen.timestep, 0.1)
+		
+		
+# Test data
+
+def greens_specimens():
+	return {
+		"full": array( [unit(2), unit(2)] ),
+		"all up": array( [zero(2), unit(2)] ),
+		"all down": array( [unit(2), zero(2)] ) }
 	
 	
-class TestRepulsionTerms(unittest.TestCase):
+class TestRepulsionTerms(TestCase):
 
 	"Simulator.repulsion_terms(n, spin) computes |U|(s n_jj(-spin) - n_jj,spin + 1/2)"
 
 	def setUp(self):
 		self.sltr = Simulator(repulsion = 1, chemical_potential = 0.5, hopping = 2, timestep = 0.1)
 		self.sltr_strong = Simulator(repulsion = 3, chemical_potential = 0.5, hopping = 2, timestep = 0.1)
-		self.specimens = {}
-		self.specimens["full"] = array( [unit(2), unit(2)] )
-		self.specimens["all up"] = array( [zero(2), unit(2)] )
-		self.specimens["all down"] = array( [unit(2), zero(2)] )
 
 	def testSpinFlip(self):
 		"Flipping the spin of all particles doesn't change the repulsion"
 		
-		for specimen in self.specimens.values():
+		for specimen in greens_specimens().values():
 			for spin in range(2):
 				straight = self.sltr.repulsion_terms(specimen, spin)
 				flipped = self.sltr.repulsion_terms(specimen[::-1, :, :], spin)
@@ -46,7 +51,7 @@ class TestRepulsionTerms(unittest.TestCase):
 	def testScaling(self):
 		"Tripling U triples the repulsion term"
 		
-		for specimen in self.specimens.values():
+		for specimen in greens_specimens().values():
 			for spin in range(2):
 				weak = self.sltr.repulsion_terms(specimen, spin)
 				strong = self.sltr_strong.repulsion_terms(specimen, spin)
@@ -55,13 +60,18 @@ class TestRepulsionTerms(unittest.TestCase):
 	def testOverlap(self):
 		"Repulsion term is uniformly 1/2 unless two particles share a site."
 		
-		for specimen in self.specimens.values():
+		for specimen in greens_specimens().values():
 			for spin in range(2):
 				if logical_or(specimen[0,:,:] == 0, specimen[1,:,:] == 0).all():
 					self.assertTrue((self.sltr.repulsion_terms(specimen, spin) == 0.5).all())
+
+
+class TestDelta(TestCase): pass
+	
+	
 				
 
-class TestNoise(unittest.TestCase):
+class TestNoise(TestCase):
 
 	"noise(n, dt)*dt is a n*n matrix with Wiener increments on the diagonal, and zeros elsewhere." 
 
@@ -76,7 +86,7 @@ class TestNoise(unittest.TestCase):
 		self.assertEqual(len(set(samples)), self.sites)
 		
 	def testOrderMagnitude(self):
-		"The mean square noise has the same order of magnitude as the timestep"
+		"The mean square noise probably has the same order of magnitude as the timestep.  (Try again if it doesn't)"
 		for step in 1, 0.1, 1e-5:
 			samples = noise(self.sites, step).diagonal()
 			variance = (step*samples).var()
@@ -97,6 +107,8 @@ class Simulator:
 		straight = diagonal(normal_greens[spin,:,:])
 		flipped = diagonal(normal_greens[1-spin,:,:])
 		return self.repulsion * flipped - abs(self.repulsion) * (0.5 - straight)
+
+	def delta(self, normal_greens, spin, noise): pass
 		
 	
 
@@ -111,4 +123,4 @@ def zero(n):
 
 
 if __name__ == '__main__':
-    unittest.main()
+    run_tests()
