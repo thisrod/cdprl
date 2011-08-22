@@ -21,6 +21,11 @@ def specimens():
 		for greens in greens_specimens():
 			for spin in 0, 1:
 				yield sltr, greens, spin
+				
+
+class TestDerivations(TestCase):
+	def testDimensionless(self):
+		self.assertTrue(False, "The number of parameters has been reduced scaling time units.")
 
 
 class TestAccessing(TestCase):
@@ -92,7 +97,7 @@ class TestDelta(TestCase):
 				self.assertTrue(is_tridiagonal(sltr.delta(greens, spin, noise)))
 				
 				
-class TestDerivative(TestCase):
+class TestGreensDerivative(TestCase):
 
 	def testShape(self):
 		for sltr, greens, spin in specimens():
@@ -107,7 +112,17 @@ class TestDerivative(TestCase):
 			for noise1 in noise_specimens(greens.shape[1]):
 				for noise2 in noise_specimens(greens.shape[1]):
 					self.assertTrue((scaled_sltr.greens_dot(greens, spin, noise1, noise2) == scaled_sltr.greens_dot(greens, spin, noise1/sqrt(3), noise2/sqrt(3))).all())
-								
+
+
+class TestWeightDerivative(TestCase): 
+
+	def testScalar(self):
+		for sltr, greens, spin in specimens():
+			self.assertTrue(sltr.weight_dot(greens).size is 1)
+
+	def testDerivation(self):
+		self.assertTrue(False, "No one has checked Rodney's expectation value for the Hamiltonian")
+
 
 class TestNoise(TestCase):
 

@@ -6,7 +6,7 @@ from numpy import array, mat, diagonal, diagflat as make_diagonal, zeros, identi
 
 class Simulator:
 
-	"Noise inputs are scaled by timestep, but not by U.  Think about that some more."
+	# I remember the physical parameters of the Fermi-Hubbard model, and compute the derivatives of the Greens' function and weight.
 
 	def __init__(self, model = None, **parameters):
 		if model is not None:
@@ -39,6 +39,36 @@ class Simulator:
 		delta1 = mat(self.delta(normal_greens, spin, noise1))
 		delta2 = mat(self.delta(normal_greens, spin, noise2))
 		return 0.5*(holes*delta1*particles + particles*delta2*holes)
+
+	def weight_dot(self, normal_greens):
+		return self.hopping * (diagonal(normal_greens[0,:,:], 1) + diagonal(normal_greens[0,:,:], -1) + diagonal(normal_greens[1,:,:], 1) + diagonal(normal_greens[1,:,:], -1)).sum() \
+			+ self.repulsion * (normal_greens[0,:,:]*normal_greens[1,:,:]).sum() \
+			- self.chemical_potential * ( diagonal(normal_greens[0,:,:]) + diagonal(normal_greens[1,:,:]) ).sum()
+	
+	
+class SemiImplicitIntegrator:
+
+	# I stochastically integrate a single sample	
+
+	def __init__(self, a_simulation, timestep):
+		self.sltn = a_simulation
+		self.timestep = timestep
+		
+	def integrate(self, start, finish, a_record, **run_labels): pass
+	
+	
+class Record:
+
+	# I average the results of trial runs
+	
+	def __init__(self, a_simulation, timestep):
+		self.sltn = a_simulation
+		self.timestep = timestep
+		
+	def enter(self, time, state, **run_labels): pass
+	
+	def delay(self, time):
+		return self timestep
 	
 
 def noise(sites, timestep):
