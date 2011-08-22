@@ -6,6 +6,7 @@ Review requests
 * There must be a better way to write Simulator.__init__
 * Please suggest extra Greens functions to test
 * TestDelta and TestDerivative aren't nearly thorough enough
+* Please confirm the assumption 〈H〉=-t∑<sub>〈ij〉σ</sub> n<sub>〈ij〉σ</sub> + U∑<sub>j</sub> n<sub>jj↑</sub> n<sub>jj↓</sub> - μ ∑<sub>jσ</sub>n<sub>jjσ</sub>
 
 Issues
 ------
