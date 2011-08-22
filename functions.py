@@ -44,6 +44,17 @@ class Simulator:
 		return self.hopping * (diagonal(normal_greens[0,:,:], 1) + diagonal(normal_greens[0,:,:], -1) + diagonal(normal_greens[1,:,:], 1) + diagonal(normal_greens[1,:,:], -1)).sum() \
 			+ self.repulsion * (normal_greens[0,:,:]*normal_greens[1,:,:]).sum() \
 			- self.chemical_potential * ( diagonal(normal_greens[0,:,:]) + diagonal(normal_greens[1,:,:]) ).sum()
+			
+	def derivative(self, time, state):
+		# state is a tuple of weight and Greens' functions
+		return (weight_dot(state[0]), greens_dot(state[1]))
+		
+	def weight(self, state):
+		return state[0]
+		
+	def moments(self, state):
+		# The moments to be collected are the Green's functions
+		return state[1]
 	
 	
 class SemiImplicitIntegrator:

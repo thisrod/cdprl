@@ -26,6 +26,11 @@ def specimens():
 class TestDerivations(TestCase):
 	def testDimensionless(self):
 		self.assertTrue(False, "The number of parameters has been reduced scaling time units.")
+		
+		
+class TestBookeeping(TestCase):
+	def testNoise(self):
+		self.AssertTrue(sltr.noise_required( (1, array([unit(5), unit(5)]))) == 10)
 
 
 class TestAccessing(TestCase):
