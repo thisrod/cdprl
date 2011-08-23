@@ -32,22 +32,28 @@ class Simulator:
 				- self.chemical_potential \
 				+ f * sqrt(2*abs(self.repulsion)) * noise)
 				
-	def greens_dot(self, normal_greens, spin, noise1, noise2):
+	def greens_dot(self, normal_greens, spin, noise):
 		n = normal_greens[spin,:,:]
+		noise1 = noise[:len(noise)//2]
+		noise2 = noise[-(len(noise)//2):]
 		particles = mat(n)
 		holes = mat(unit_like(n) - n)
 		delta1 = mat(self.delta(normal_greens, spin, noise1))
 		delta2 = mat(self.delta(normal_greens, spin, noise2))
 		return 0.5*(holes*delta1*particles + particles*delta2*holes)
 
-	def weight_dot(self, normal_greens):
+	def weight_log_dot(self, normal_greens):
 		return self.hopping * (diagonal(normal_greens[0,:,:], 1) + diagonal(normal_greens[0,:,:], -1) + diagonal(normal_greens[1,:,:], 1) + diagonal(normal_greens[1,:,:], -1)).sum() \
 			+ self.repulsion * (normal_greens[0,:,:]*normal_greens[1,:,:]).sum() \
 			- self.chemical_potential * ( diagonal(normal_greens[0,:,:]) + diagonal(normal_greens[1,:,:]) ).sum()
 			
-	def derivative(self, time, state):
+	def derivative(self, time, state, noise):
 		# state is a tuple of weight and Greens' functions
-		return (weight_dot(state[0]), greens_dot(state[1]))
+		return (state[0]*self.weight_log_dot(state[1]), (self.greens_dot(state[1], 0, noise), self.greens_dot(state[1], 1, noise)))
+		
+	def noise_required(self, state):
+		greens = state[1]
+		return 2*greens.shape[2]
 		
 	def weight(self, state):
 		return state[0]
@@ -79,7 +85,7 @@ class Record:
 	def enter(self, time, state, **run_labels): pass
 	
 	def delay(self, time):
-		return self timestep
+		return self.timestep
 	
 
 def noise(sites, timestep):

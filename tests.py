@@ -14,7 +14,7 @@ def simulator_specimens():
 	yield Simulator(repulsion = 1, chemical_potential = 0.5, hopping = 2, timestep = 0.1)
 	
 def noise_specimens(sites):
-	yield zeros(sites)
+	yield zeros(2*sites)
 	
 def specimens():
 	for sltr in simulator_specimens():
@@ -26,11 +26,6 @@ def specimens():
 class TestDerivations(TestCase):
 	def testDimensionless(self):
 		self.assertTrue(False, "The number of parameters has been reduced scaling time units.")
-		
-		
-class TestBookeeping(TestCase):
-	def testNoise(self):
-		self.AssertTrue(sltr.noise_required( (1, array([unit(5), unit(5)]))) == 10)
 
 
 class TestAccessing(TestCase):
@@ -94,29 +89,27 @@ class TestDelta(TestCase):
 	def testShape(self):
 		for sltr, greens, spin in specimens():
 			for noise in noise_specimens(greens.shape[1]):
-				self.assertTrue(sltr.delta(greens, spin, noise).shape == greens[spin,:,:].shape)
+				self.assertTrue(sltr.delta(greens, spin, noise[:noise.size//2]).shape == greens[spin,:,:].shape)
 	
 	def testTridiagonal(self):
 		for sltr, greens, spin in specimens():
 			for noise in noise_specimens(greens.shape[1]):
-				self.assertTrue(is_tridiagonal(sltr.delta(greens, spin, noise)))
+				self.assertTrue(is_tridiagonal(sltr.delta(greens, spin, noise[:noise.size//2])))
 				
 				
 class TestGreensDerivative(TestCase):
 
 	def testShape(self):
 		for sltr, greens, spin in specimens():
-			for noise1 in noise_specimens(greens.shape[1]):
-				for noise2 in noise_specimens(greens.shape[1]):
-					self.assertTrue(sltr.greens_dot(greens, spin, noise1, noise2).shape == greens[spin,:,:].shape)
+			for noise in noise_specimens(greens.shape[1]):
+					self.assertTrue(sltr.greens_dot(greens, spin, noise).shape == greens[spin,:,:].shape)
 					
 	def testScaling(self):
 		"Tripling U and scaling the noise input by 1/sqrt(3) cancel out."
 		for sltr, greens, spin in specimens():
 			scaled_sltr = Simulator(sltr, repulsion = sltr.repulsion * 3)
-			for noise1 in noise_specimens(greens.shape[1]):
-				for noise2 in noise_specimens(greens.shape[1]):
-					self.assertTrue((scaled_sltr.greens_dot(greens, spin, noise1, noise2) == scaled_sltr.greens_dot(greens, spin, noise1/sqrt(3), noise2/sqrt(3))).all())
+			for noise in noise_specimens(greens.shape[1]):
+					self.assertTrue((scaled_sltr.greens_dot(greens, spin, noise) == scaled_sltr.greens_dot(greens, spin, noise)).all())
 
 
 class TestWeightDerivative(TestCase): 
@@ -127,6 +120,20 @@ class TestWeightDerivative(TestCase):
 
 	def testDerivation(self):
 		self.assertTrue(False, "No one has checked Rodney's expectation value for the Hamiltonian")
+
+
+class TestSimulatorInterface(TestCase):
+
+	def setUp(self):
+		self.sltr = Simulator(repulsion = 1, chemical_potential = 0.5, hopping = 2, timestep = 0.1)
+		self.state = (1, array([unit(5), unit(5)]))
+	
+	def testNoise(self):
+		self.assertTrue(self.sltr.noise_required(self.state) == 10)
+
+	def testDerivativeShape(self):
+		self.assertTrue(self.sltr.derivative(0, self.state, zeros(self.sltr.noise_required(self.state)).shape) == self.state.shape)
+
 
 
 class TestNoise(TestCase):
