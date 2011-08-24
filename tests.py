@@ -116,7 +116,7 @@ class TestWeightDerivative(TestCase):
 
 	def testScalar(self):
 		for sltr, greens, spin in specimens():
-			self.assertTrue(sltr.weight_dot(greens).size is 1)
+			self.assertTrue(sltr.weight_log_dot(greens).size is 1)
 
 	def testDerivation(self):
 		self.assertTrue(False, "No one has checked Rodney's expectation value for the Hamiltonian")
@@ -132,7 +132,9 @@ class TestSimulatorInterface(TestCase):
 		self.assertTrue(self.sltr.noise_required(self.state) == 10)
 
 	def testDerivativeShape(self):
-		self.assertTrue(self.sltr.derivative(0, self.state, zeros(self.sltr.noise_required(self.state)).shape) == self.state.shape)
+		deriv = self.sltr.derivative(0, self.state, zeros(self.sltr.noise_required(self.state)))
+		self.assertTrue(len(deriv) is 2)
+		self.assertTrue(deriv[1].shape == self.state[1].shape)
 
 
 

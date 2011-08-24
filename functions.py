@@ -49,7 +49,7 @@ class Simulator:
 			
 	def derivative(self, time, state, noise):
 		# state is a tuple of weight and Greens' functions
-		return (state[0]*self.weight_log_dot(state[1]), (self.greens_dot(state[1], 0, noise), self.greens_dot(state[1], 1, noise)))
+		return (state[0]*self.weight_log_dot(state[1]), array([self.greens_dot(state[1], 0, noise), self.greens_dot(state[1], 1, noise)]))
 		
 	def noise_required(self, state):
 		greens = state[1]
