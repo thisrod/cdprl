@@ -78,15 +78,35 @@ class Record:
 
 	# I average the results of trial runs
 	
-	def __init__(self, a_simulation, timestep):
-		self.sltn = a_simulation
+	# results[run_label][time] is moments
+	# value() might be faster if we sorted the time series and used binary search
+	
+	def __init__(self, timestep):
 		self.timestep = timestep
+		self.results = {}
 		
-	def enter(self, time, state, **run_labels): pass
+	def enter(self, time, moments, *run_label):
+		if run_label not in self.results:
+			self.results[run_label] = {}
+		self.results[run_label][time] = moments
 	
-	def delay(self, time):
-		return self.timestep
-	
+	def after(self, time):
+		return time + self.timestep
+
+	def mean(self, time):
+		return mean([self.value(time, i) for i in self.results])
+		
+	def value(self, time, run_label):
+		# bug - should detect out of range
+		# bug - look for a stable way to do interpolation (notebook 24/8/11)
+		series = self.results[run_label]
+		if time in series:
+			return series[time]
+		pre = max([t for t in series if t < time])
+		post = min([t for t in series if t > time])
+		return series[pre] + (series[post]-series[pre])*(t-pre)/(post-pre)
+			
+		
 
 def noise(sites, timestep):
 	return make_diagonal(normal_deviates(sites))/sqrt(timestep)
@@ -102,3 +122,6 @@ def zero(n):
 
 def unit_like(array):
 	return unit(array.shape[0])
+	
+def mean(xs):
+	return sum(xs)/len(xs)

@@ -23,6 +23,8 @@ def specimens():
 				yield sltr, greens, spin
 				
 
+## Tests of the Fermi-Hubbard simulator
+
 class TestDerivations(TestCase):
 	def testDimensionless(self):
 		self.assertTrue(False, "The number of parameters has been reduced scaling time units.")
@@ -137,6 +139,7 @@ class TestSimulatorInterface(TestCase):
 		self.assertTrue(deriv[1].shape == self.state[1].shape)
 
 
+## Tests of the prng
 
 class TestNoise(TestCase):
 
