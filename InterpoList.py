@@ -13,6 +13,7 @@
 from bisect import bisect, bisect_left
 from math import fabs
 import string
+from unittest import TestCase, main as run_tests
 
 class InterpoList(object):
     """
@@ -105,4 +106,25 @@ class InterpoList(object):
     def __iter__(self):
         """ Returns an iterator which can traverse the list """
         return self.items.__iter__()
+        
+        
+# Simple regression test
 
+class TestRegression(TestCase):
+	
+	def setUp(self):
+		self.mapping = InterpoList(data = {-1:-1, 0:0, 1:7})
+		
+	def testRegression(self):
+		""" Interpolated values near zero are correct to 1% """
+		epsilon = 1e-30
+		plus = self.mapping[epsilon]/epsilon
+		minus = -self.mapping[-epsilon]/epsilon
+		self.assertTrue(0.99 < minus/1)
+		self.assertTrue(minus/1 < 1.01)
+		self.assertTrue(0.99 < plus/7)
+		self.assertTrue(plus/7 < 1.01)
+		
+
+if __name__ == '__main__':
+    run_tests()
