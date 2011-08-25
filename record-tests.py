@@ -30,6 +30,14 @@ class TestIdentical(TestCase):
 		self.specimen[-0.1] = 7
 		self.specimen[0.1] = 7
 		self.assertTrue(self.specimen(0) == 7)
+		
+		
+class TestWeighted(TestCase):
+
+	def setUp(self):
+		self.specimen = Record(timestep = 1)
+		self.specimen[0, 'run1'] = (0.5, 7)
+		self.specimen[0, 'run2'] = (1.5, 13)
 
 
 class TestTiming(TestCase):
