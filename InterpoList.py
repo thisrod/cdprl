@@ -1,5 +1,6 @@
 """
     InterpoList module (c) Gaz Davidson December 2009.
+    Modified by Rodney Polkinghorne, 2011
 
     This is a simple interpolated list type useful for graphing, you
     can set values at any index and it will linearly interpolate between
@@ -51,9 +52,10 @@ class InterpoList(object):
                     # refuse to extrapolate
                     raise IndexError("Extrapolation is not supported")
                 else:
-                    # interpolate                    
-                    factor = (self.items[i][0] - findex) / (self.items[i][0] - self.items[i-1][0])
-                    return self.items[i][1] - (self.items[i][1] - self.items[i-1][1])*factor
+                    # interpolate
+                    preindex, prevalue =  self.items[i-1]
+                    postindex, postvalue = self.items[i]
+                    return (prevalue*(postindex-findex)+postvalue*(findex-preindex))/(postindex-preindex)
 
     def __setitem__(self, key, value):
         """ adds a new keypoint or replaces a current one """
