@@ -53,9 +53,23 @@ class TestTiming(TestCase):
 		"Forgive me father, I have compared floating point values for equality.  What does Python call closeTo?" 
 		for t in 1e-3, 1, 1000:
 			self.assertTrue(self.specimen.after(t) <= t+1)
+			
 	
+# Regression tests for internal functions		
 		
+class TestMarshalling(TestCase):
+	
+	def setUp(self):
+		self.specimen = Record(timestep = 1)
 		
+	def testKey(self):
+		self.assertEqual(self.specimen.demux_key(2), (2.0, ()))
+		self.assertEqual(self.specimen.demux_key((2, 'run1', 3)), (2.0, ('run1', 3)))
+		
+	def testValue(self):
+		self.assertEqual(self.specimen.demux_value(2), (1.0, 2))
+		self.assertEqual(self.specimen.demux_value((0.5, 2)), (0.5, 2))
+	
 
 
 if __name__ == '__main__':

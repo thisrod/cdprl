@@ -1,6 +1,7 @@
 from math import sqrt
 from numpy.random import randn as normal_deviates
 from numpy import array, mat, diagonal, diagflat as make_diagonal, zeros, identity as unit, logical_or
+from InterpoList import InterpoList as Interpolation
 
 
 
@@ -76,14 +77,41 @@ class SemiImplicitIntegrator:
 	
 class Record:
 
-	# I average the results of trial runs
+	""" I average the results of trial runs """
 	
-	# results[run_label][time] is moments
-	# value() might be faster if we sorted the time series and used binary search
+	# results is a dictionary of run_labels
+	# results[run_label] is an Interpolation from times to (weight, moments) pairs 
+	# moments need to interpret + and * as elemental operations.  I.e., ndarrays are in, but lists and tuples are out.
+
+	# Python bogosity warning: x[2] means x.__getitem__(2), but x[2,3] means x.__getitem__((2,3))
 	
 	def __init__(self, timestep):
 		self.timestep = timestep
 		self.results = {}
+		
+	def demux_key(self, key):
+		# Split key into time and run_label
+		if type(key) is tuple:
+			return float(key[0]), key[1:]
+		else:
+			return float(key), ()
+		
+	def demux_value(self, value):
+		# Split value into weight and moments
+		# Storing moments in tuples ist verboten: see class comment.
+		if type(value) is tuple:
+			return float(value[0]), value[1]
+		else:
+			return 1.0, value
+		
+	def __setitem__(self, key, value):
+		time, run_label = self.demux_key(key)
+		weight, moments = self.demux_value(value)
+		if run_label not in self.results:
+			self.results[run_label] = Interpolation()
+		self.results[run_label][time] = (weight, moments)
+		
+		
 		
 	def enter(self, time, moments, *run_label):
 		if run_label not in self.results:
