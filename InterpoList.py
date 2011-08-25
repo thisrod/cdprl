@@ -32,9 +32,15 @@ class InterpoList(object):
         """ constructor """
         self.items = data.items()
         self.items.sort()
+        
+    def ordinate(self, findex, i):
+        """ Return the ordinate at findex of the line through self[i-1] and self[i] """
+        preindex, prevalue =  self.items[i-1]
+        postindex, postvalue = self.items[i]
+        return (prevalue*(postindex-findex) + postvalue*(findex-preindex)) / (postindex-preindex)
 
-    def __getitem__(self, index):
-        """ Returns the value for a given index """
+    def __call__(self, index):
+        """ Returns the value interpolated for a given index """
         # create a dummy item for searching
         findex = float(index)
         item   = (findex, 0)
@@ -53,10 +59,11 @@ class InterpoList(object):
                     # refuse to extrapolate
                     raise IndexError("Extrapolation is not supported")
                 else:
-                    # interpolate
-                    preindex, prevalue =  self.items[i-1]
-                    postindex, postvalue = self.items[i]
-                    return (prevalue*(postindex-findex) + postvalue*(findex-preindex)) / (postindex-preindex)
+                    return self.ordinate(findex, i)
+                    
+    def __getitem__(self, key):
+    	""" Finds the value at a data point """
+    	return self.items[key]
 
     def __setitem__(self, key, value):
         """ adds a new keypoint or replaces a current one """
@@ -118,8 +125,8 @@ class TestRegression(TestCase):
 	def testRegression(self):
 		""" Interpolated values near zero are correct to 1% """
 		epsilon = 1e-30
-		plus = self.mapping[epsilon]/epsilon
-		minus = -self.mapping[-epsilon]/epsilon
+		plus = self.mapping(epsilon)/epsilon
+		minus = -self.mapping(-epsilon)/epsilon
 		self.assertTrue(0.99 < minus/1)
 		self.assertTrue(minus/1 < 1.01)
 		self.assertTrue(0.99 < plus/7)
