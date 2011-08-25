@@ -55,7 +55,7 @@ class InterpoList(object):
                     # interpolate
                     preindex, prevalue =  self.items[i-1]
                     postindex, postvalue = self.items[i]
-                    return (prevalue*(postindex-findex)+postvalue*(findex-preindex))/(postindex-preindex)
+                    return (prevalue*(postindex-findex) + postvalue*(findex-preindex)) / (postindex-preindex)
 
     def __setitem__(self, key, value):
         """ adds a new keypoint or replaces a current one """
