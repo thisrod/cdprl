@@ -60,10 +60,6 @@ class InterpoList(object):
         else:
             return self.ordinate(findex, i)
                     
-    def __getitem__(self, key):
-    	""" Finds the value at a data point """
-    	return self.items[key]
-
     def __setitem__(self, key, value):
         """ adds a new keypoint or replaces a current one """
         # create a new list item
