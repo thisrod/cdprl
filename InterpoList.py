@@ -13,9 +13,10 @@
 from bisect import bisect, bisect_left
 from math import fabs
 import string
+from collections import MutableMapping, Callable
 from unittest import TestCase, main as run_tests
 
-class InterpoList(object):
+class InterpoList(MutableMapping, Callable):
     """
         A list type which automatically does linear interpolation.
         For example:
@@ -74,6 +75,22 @@ class InterpoList(object):
         else:
             # insert it
             self.items.insert(i, item)
+            
+    def __getitem__(self, key):
+        """ Answers the value stored for key, if there is one """
+        fkey = float(key)
+        item = (fkey, 0)
+        i = bisect_left(self.items, item)
+        
+        # convert IndexError to KeyError
+        try:
+            if self.items[i][0] == fkey:
+                return self.items[i][1]
+            else:
+                raise KeyError("Key not found")
+        except IndexError:
+            raise KeyError("Key not found")
+       
 
 
     def __delitem__(self, key):
