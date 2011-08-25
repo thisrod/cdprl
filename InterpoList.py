@@ -110,14 +110,34 @@ class InterpoList(object):
         return self.items.__iter__()
         
         
-# Simple regression test
+# Simple regression tests
 
-class TestRegression(TestCase):
+class TestAccessing(TestCase):
+
+	def setUp(self):
+		self.empty = InterpoList()
+		self.mapping = InterpoList(data = {0: 7})
+		
+	def testAdding(self):
+		self.empty[0] = 3
+		self.assertTrue(0 in self.empty)
+		self.assertTrue(self.empty[0] == 3)
+		
+	def testInitialization(self):
+		self.assertTrue(0 in self.mapping)
+		self.assertTrue(self.mapping[0] == 7)
+		
+	def testDeletion(self):
+		del self.mapping[0]
+		self.assertFalse(0 in self.mapping)
+		
+
+class TestNumerics(TestCase):
 	
 	def setUp(self):
 		self.mapping = InterpoList(data = {-1:-1, 0:0, 1:7})
 		
-	def testRegression(self):
+	def testNearPoint(self):
 		""" Interpolated values near zero are correct to 1% """
 		epsilon = 1e-30
 		plus = self.mapping(epsilon)/epsilon
@@ -129,6 +149,18 @@ class TestRegression(TestCase):
 		self.assertTrue(zero < epsilon)
 		self.assertTrue(0.99 < plus/7)
 		self.assertTrue(plus/7 < 1.01)
+		
+
+class TestReversion(TestCase):
+	
+	def setUp(self):
+		self.mapping = InterpoList(data = {-1:-1, 0:7, 1:1})
+		
+	def testRevert(self):
+		""" Interpolated values revert when a point is deleted """
+		del self.mapping[0]
+		self.assertTrue(-1e-10 < self.mapping(0))
+		self.assertTrue(self.mapping(0) < 1e-10)
 		
 
 if __name__ == '__main__':
