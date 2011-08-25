@@ -38,28 +38,26 @@ class InterpoList(object):
         preindex, prevalue =  self.items[i-1]
         postindex, postvalue = self.items[i]
         return (prevalue*(postindex-findex) + postvalue*(findex-preindex)) / (postindex-preindex)
+        
+    def extrapolation(self, findex):
+    	""" Is findex outside the domain of my data? """
+    	return self.items[0][0] > findex or self.items[-1][0] < findex
 
     def __call__(self, index):
         """ Returns the value interpolated for a given index """
         # create a dummy item for searching
         findex = float(index)
+        if self.extrapolation(findex):
+            raise IndexError("Extrapolation is not supported")
         item   = (findex, 0)
         # find the position where it would be inserted
         i = bisect(self.items, item)
 
-        if i == 0 and self.items[0][0] != findex: # or i > len(self.items):
-            # refuse to extrapolate
-            raise IndexError("Extrapolation is not supported")
+        if self.items[i-1].index == findex:
+            # exact
+            return self.items[i-1].value
         else:
-            if self.items[i-1].index == findex:
-                # exact
-                return self.items[i-1].value
-            else:
-                if i == len(self.items):
-                    # refuse to extrapolate
-                    raise IndexError("Extrapolation is not supported")
-                else:
-                    return self.ordinate(findex, i)
+            return self.ordinate(findex, i)
                     
     def __getitem__(self, key):
     	""" Finds the value at a data point """
