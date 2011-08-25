@@ -55,6 +55,7 @@ class InterpoList(object):
 
         if self.items[i-1].index == findex:
             # exact
+            assert False	# this can't happen: index is a method
             return self.items[i-1].value
         else:
             return self.ordinate(findex, i)
@@ -124,9 +125,12 @@ class TestRegression(TestCase):
 		""" Interpolated values near zero are correct to 1% """
 		epsilon = 1e-30
 		plus = self.mapping(epsilon)/epsilon
+		zero = self.mapping(0)
 		minus = -self.mapping(-epsilon)/epsilon
 		self.assertTrue(0.99 < minus/1)
 		self.assertTrue(minus/1 < 1.01)
+		self.assertTrue(-epsilon < zero)
+		self.assertTrue(zero < epsilon)
 		self.assertTrue(0.99 < plus/7)
 		self.assertTrue(plus/7 < 1.01)
 		
