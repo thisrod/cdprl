@@ -110,13 +110,6 @@ class Record:
 		if run_label not in self.results:
 			self.results[run_label] = Interpolation()
 		self.results[run_label][time] = (weight, moments)
-		
-		
-		
-	def enter(self, time, moments, *run_label):
-		if run_label not in self.results:
-			self.results[run_label] = {}
-		self.results[run_label][time] = moments
 	
 	def after(self, time):
 		return time + self.timestep

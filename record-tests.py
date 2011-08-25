@@ -4,6 +4,25 @@ from unittest import TestCase, main as run_tests
 from functions import *
 
 
+class TestAccessing(TestCase):
+
+	def setUp(self):
+		self.specimen = Record(timestep = 1)
+		
+	def testEmpty(self):
+		self.assertFalse(3 in self.specimen)
+		
+	def testAdding(self):
+		self.specimen[3] = 7
+		self.assertTrue(3 in self.specimen)
+		self.assertEqual(self.specimen[3], 7)
+		
+	def testAddingWithRunLabel(self):
+		self.specimen[3, 'run'] = 7
+		self.assertTrue((3, 'run') in self.specimen)
+		self.assertEqual(self.specimen[3, 'run'], 7)
+		
+
 class TestIdentical(TestCase):
 
 	"The average of identical data is the datum."
