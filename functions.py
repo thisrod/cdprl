@@ -2,6 +2,7 @@ from math import sqrt
 from numpy.random import randn as normal_deviates
 from numpy import array, mat, diagonal, diagflat as make_diagonal, zeros, identity as unit, logical_or
 from InterpoList import InterpoList as Interpolation
+from collections import MutableMapping, Callable
 
 
 
@@ -75,13 +76,15 @@ class SemiImplicitIntegrator:
 	def integrate(self, start, finish, a_record, **run_labels): pass
 	
 	
-class Record:
+class Record(MutableMapping, Callable):
 
 	""" I average the results of trial runs """
 	
 	# results is a dictionary of run_labels
 	# results[run_label] is an Interpolation from times to (weight, moments) pairs 
 	# moments need to interpret + and * as elemental operations.  I.e., ndarrays are in, but lists and tuples are out.
+	
+	# self[t] is a tuple of weight and moments.  self[t] = moments implies the weight is 1.0
 
 	# Python bogosity warning: x[2] means x.__getitem__(2), but x[2,3] means x.__getitem__((2,3))
 	
@@ -103,13 +106,25 @@ class Record:
 			return float(value[0]), value[1]
 		else:
 			return 1.0, value
-		
+			
+	def __call__(self, time): pass
+	
+	def __delitem__(self, key): pass 
+	
+	def __iter__(self): pass
+	
+	def __len__(self): pass	# Presumably answer the number of items stored?
+	
 	def __setitem__(self, key, value):
 		time, run_label = self.demux_key(key)
 		weight, moments = self.demux_value(value)
 		if run_label not in self.results:
 			self.results[run_label] = Interpolation()
 		self.results[run_label][time] = (weight, moments)
+		
+	def __getitem__(self, key):
+		time, run_label = self.demux_key(key)
+		return self.results[run_label][time]	# This could raise a genuine IndexError
 	
 	def after(self, time):
 		return time + self.timestep

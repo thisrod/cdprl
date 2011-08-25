@@ -42,7 +42,22 @@ Finally, the
 .CW Recorder
 class tells the 
 .CW Integrator
-when to record moments, receives the moments, and averages them over trajectories.  The moments come in pairs, one either side of the requested time.  The 
+when to record moments, receives the moments, and averages them over trajectories.  The moments will usually come in pairs, one either side of the requested time.  The 
 .CW Recorder
 is responsible for interpolating between them.
+
+.PP
+The interface to 
+.CW Recorder
+is a hybrid of function and dictionary.  Getting and setting items stores and retrieves data.  Calling the 
+.CW Recorder
+with a time, and possibly a series of
+.CW run_labels ,
+interpolates a value of the moments for each run at that time, and returns an average over any labels that haven't been specified.  The moments need to be 
+.CW ndarray s,
+not
+.CW list s
+or
+.CW tuple s,
+so that the averaging operations can access elemental addition and division.
 

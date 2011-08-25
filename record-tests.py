@@ -15,12 +15,12 @@ class TestAccessing(TestCase):
 	def testAdding(self):
 		self.specimen[3] = 7
 		self.assertTrue(3 in self.specimen)
-		self.assertEqual(self.specimen[3], 7)
+		self.assertEqual(self.specimen[3], (1.0, 7))
 		
 	def testAddingWithRunLabel(self):
 		self.specimen[3, 'run'] = 7
 		self.assertTrue((3, 'run') in self.specimen)
-		self.assertEqual(self.specimen[3, 'run'], 7)
+		self.assertEqual(self.specimen[3, 'run'], (1.0, 7))
 		
 
 class TestIdentical(TestCase):
@@ -43,7 +43,7 @@ class TestIdentical(TestCase):
 	def testConstant(self):
 		self.specimen[-1] = 7
 		self.specimen[1] = 7
-		self.assertTrue(self.specimen(0) == 7)
+		self.assertEqual(self.specimen(0), 7)
 		
 	def testInterpolation(self):
 		self.specimen[-0.1] = 7
