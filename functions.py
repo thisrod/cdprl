@@ -3,6 +3,7 @@ from numpy.random import randn as normal_deviates
 from numpy import array, mat, diagonal, diagflat as make_diagonal, zeros, identity as unit, logical_or
 from InterpoList import InterpoList as Interpolation
 from collections import MutableMapping, Callable
+from pairs import Pair, cons
 
 
 
@@ -82,7 +83,7 @@ class Record(MutableMapping, Callable):
 	
 	# results is a dictionary of run_labels
 	# results[run_label] is an Interpolation from times to (weight, moments) pairs 
-	# moments need to interpret + and * as elemental operations.  I.e., ndarrays are in, but lists and tuples are out.
+	# moments need to interpret + and * as elemental operations.  I.e., ndarrays are in, but lists and tuples are out.  This prevents the use of (weight, moment) tuples - I've defined a special Pair class to handle it.
 	
 	# self[t] is a tuple of weight and moments.  self[t] = moments implies the weight is 1.0
 
@@ -107,7 +108,10 @@ class Record(MutableMapping, Callable):
 		else:
 			return 1.0, value
 			
-	def __call__(self, time): pass
+	def __call__(self, key):
+		time, prefix = self.demux_key(key)
+		sample = [self.results[label](time) for label in self.results if label[0:len(prefix)]==prefix]
+		return sum([s.car * s.cdr for s in sample]) / sum([s.car for s in sample])
 	
 	def __delitem__(self, key): pass 
 	
@@ -120,11 +124,11 @@ class Record(MutableMapping, Callable):
 		weight, moments = self.demux_value(value)
 		if run_label not in self.results:
 			self.results[run_label] = Interpolation()
-		self.results[run_label][time] = (weight, moments)
+		self.results[run_label][time] = cons(weight, moments)
 		
 	def __getitem__(self, key):
 		time, run_label = self.demux_key(key)
-		return self.results[run_label][time]	# This could raise a genuine IndexError
+		return self.results[run_label][time].astuple()	# This could raise a genuine IndexError
 	
 	def after(self, time):
 		return time + self.timestep
@@ -132,15 +136,6 @@ class Record(MutableMapping, Callable):
 	def mean(self, time):
 		return mean([self.value(time, i) for i in self.results])
 		
-	def value(self, time, run_label):
-		# bug - should detect out of range
-		# bug - look for a stable way to do interpolation (notebook 24/8/11)
-		series = self.results[run_label]
-		if time in series:
-			return series[time]
-		pre = max([t for t in series if t < time])
-		post = min([t for t in series if t > time])
-		return series[pre] + (series[post]-series[pre])*(t-pre)/(post-pre)
 			
 		
 
