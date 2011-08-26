@@ -54,10 +54,8 @@ class InterpoList(MutableMapping, Callable):
         # find the position where it would be inserted
         i = bisect(self.items, item)
 
-        if self.items[i-1].index == findex:
-            # exact
-            assert False	# this can't happen: index is a method
-            return self.items[i-1].value
+        if self.items[i-1][0] == findex:
+            return self.items[i-1][1]
         else:
             return self.ordinate(findex, i)
                     
@@ -147,6 +145,15 @@ class TestAccessing(TestCase):
 	def testDeletion(self):
 		del self.mapping[0]
 		self.assertFalse(0 in self.mapping)
+		
+		
+class TestSingleton(TestCase):
+
+	def setUp(self):
+		self.specimen = InterpoList(data = {0:7})
+		
+	def testInterpolate(self):
+		self.assertEqual(self.specimen(0), 7)
 		
 
 class TestNumerics(TestCase):
