@@ -6,7 +6,6 @@ from collections import MutableMapping, Callable
 from pairs import Pair, cons
 
 
-
 class Simulator:
 
 	# I remember the physical parameters of the Fermi-Hubbard model, and compute the derivatives of the Greens' function and weight.
@@ -64,17 +63,63 @@ class Simulator:
 	def moments(self, state):
 		# The moments to be collected are the Green's functions
 		return state[1]
+
+
+class Noise:
+
+	"""I am the abstract base class for noise sources.
+	
+	If x is a noise source, x[i] is the ith process, and x[i](t, dt) is its average derivative from t to t+dt.  This can also be written x(t, dt)[i], because x(t, dt) is a sequence of the derivatives of all processes.
+	
+	Subclasses need to override __init__, to handle their run labels, and derivatives, to generate the noise."""
+
+	def __init__(self, *run_labels):
+		raise(NotImplementedError)
+
+	def __call__(self, start, duration):
+		return IntervalSpecialisedNoise(self, start, duration)
+		
+	def __getitem__(self, indices):
+		return ProcessSpecialisedNoise(self, indices)
+		
+	def derivatives(self, indices, start, duration):
+		"""Return a tuple of average derivatives for processes in the stride or number indices, from start, over duration."""
+		raise(NotImplementedError)
+		
+
+class IntervalSpecialisedNoise:
+
+	def __init__(self, noise, start, duration):
+		self.noise = noise
+		self.start = start
+		self.duration = duration
+		
+	def __getitem__(self, indices):
+		return self.noise.derivatives(indices, self.start, self.duration)
+		
+	
+class ProcessSpecialisedNoise:
+
+	def __init__(self, noise, indices):
+		self.noise = noise
+		self.indices = indices
+	
+	def __call__(self, start, duration):
+		return self.noise.derivatives(self.indices, start, duration)
+		
 	
 	
 class SemiImplicitIntegrator:
 
 	# I stochastically integrate a single sample	
 
-	def __init__(self, a_simulation, timestep):
+	def __init__(self, a_simulation, a_noise_source, timestep):
 		self.sltn = a_simulation
 		self.timestep = timestep
+		self.source = a_noise_source
 		
 	def integrate(self, start, finish, a_record, **run_labels): pass
+		# Integrates a single run.  The labels are passed on to the recorder.
 	
 	
 class Record(MutableMapping, Callable):
