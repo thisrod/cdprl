@@ -107,6 +107,21 @@ class ProcessSpecialisedNoise:
 	def __call__(self, start, duration):
 		return self.noise.derivatives(self.indices, start, duration)
 		
+		
+class DiscreteNoise:
+
+	"""This noise source seeds a Python PRNG for each process and run_labels, which generates independent derivatives for intervals of length timestep, starting from time 0."""
+
+	def __init__(self, timestep, run_labels): pass
+	
+	def derivatives(self, indices, start_time, duration):
+		start = start_time / self.timestep
+		steps = duration / self.timestep
+		
+		# only handle one index for now
+		setstate(self.state(indices, start_time))
+		position = positions[indices]
+		
 	
 	
 class SemiImplicitIntegrator:
