@@ -1,13 +1,13 @@
 """
-    InterpoList module (c) Gaz Davidson December 2009.
-    Modified by Rodney Polkinghorne, 2011
+	InterpoList module (c) Gaz Davidson December 2009.
+	Modified by Rodney Polkinghorne, 2011
 
-    This is a simple interpolated list type useful for graphing, you
-    can set values at any index and it will linearly interpolate between
-    the missing ones.
+	This is a simple interpolated list type useful for graphing, you
+	can set values at any index and it will linearly interpolate between
+	the missing ones.
 
-    License:
-       Use for any purpose under one condition: I am not to blame for anything.
+	License:
+	   Use for any purpose under one condition: I am not to blame for anything.
 """
 
 from bisect import bisect, bisect_left
@@ -17,114 +17,87 @@ from collections import MutableMapping, Callable
 from unittest import TestCase, main as run_tests
 
 class InterpoList(MutableMapping, Callable):
-    """
-        A list type which automatically does linear interpolation.
-        For example:
-            >>> a = InterpoList()
-            >>> a[0]   = 0
-            >>> a[100] = 200
-            >>> a[200] = 0
-            >>> a[50]
-            100.0
-            >>> a[125]
-            150.0
-    """
-    def __init__(self, data = {}):
-        """ constructor """
-        self.items = data.items()
-        self.items.sort()
-        
-    def ordinate(self, findex, i):
-        """ Return the ordinate at findex of the line through self[i-1] and self[i] """
-        preindex, prevalue =  self.items[i-1]
-        postindex, postvalue = self.items[i]
-        return (prevalue*(postindex-findex) + postvalue*(findex-preindex)) / (postindex-preindex)
-        
-    def extrapolation(self, findex):
-    	""" Is findex outside the domain of my data? """
-    	return self.items[0][0] > findex or self.items[-1][0] < findex
+	"""
+		A list type which automatically does linear interpolation.
+		
+	"""
+	def __init__(self, data = {}):
+		""" constructor """
+		self.points = {}
+		for x in data:
+			self[x] = data[x]
+			
+	# self.points stores the known points.  subscript operations convert it to a dict, and interpolation to a sorted list of (abscissa, ordinate) pairs.
+		
+	def be_table(self):
+		self.points = dict(self.points)
+		
+	def be_sorted(self):
+		if type(self.points) is dict:
+			self.points = self.points.items()
+			self.points.sort()
+		
+	def ordinate(self, abscissa, i):
+		"""return the ordinate at abscissa of the line through points i-1 and i.  this only makes sense if the sorted list representation is in use.  beware rounding near known points."""
+		
+		preabs, preord =  self.points[i-1]
+		postabs, postord = self.points[i]
+		return (preord*(postabs-abscissa) + postord*(abscissa-preabs)) / (postabs-preabs)
+		
+	def extrapolation(self, abscissa):
+		""" Is abscissa outside the domain of my data? """
+		self.be_sorted()
+		return self.points[0][0] > abscissa or self.points[-1][0] < abscissa
 
-    def __call__(self, index):
-        """ Returns the value interpolated for a given index """
-        # create a dummy item for searching
-        findex = float(index)
-        if self.extrapolation(findex):
-            raise IndexError("Extrapolation is not supported")
-        item   = (findex, 0)
-        # find the position where it would be inserted
-        i = bisect(self.items, item)
+	def __call__(self, x):
+		""" Returns the value interpolated for a given abscissa """
+		self.be_sorted()
+		abscissa = float(x)
+		if self.extrapolation(abscissa):
+			raise IndexError("Extrapolation is not supported")
+		sampling = [p[0] for p in self.points]
+		i = bisect_left(sampling, abscissa)
+		# this test is needed in case i == 0
+		if sampling[i] == abscissa:
+			return self.points[i][1]
+		else:
+			return self.ordinate(abscissa, i)
+					
+	def __setitem__(self, key, value):
+		""" adds a new keypoint or replaces a current one """
+		self.be_table()
+		self.points[float(key)] = float(value)
+			
+	def __getitem__(self, key):
+		""" Answers the value stored for key, if there is one """
+		self.be_table()
+		return self.points[float(key)]
 
-        if self.items[i-1][0] == findex:
-            return self.items[i-1][1]
-        else:
-            return self.ordinate(findex, i)
-                    
-    def __setitem__(self, key, value):
-        """ adds a new keypoint or replaces a current one """
-        # create a new list item
-        fkey = float(key)
-        item = (fkey, value)
-        # find the insertion point
-        i = bisect_left(self.items, item)
-        
-        # replace existing value?
-        if i < len(self.items) and self.items[i].index == fkey:
-            self.items[i] = item
-        else:
-            # insert it
-            self.items.insert(i, item)
-            
-    def __getitem__(self, key):
-        """ Answers the value stored for key, if there is one """
-        fkey = float(key)
-        item = (fkey, 0)
-        i = bisect_left(self.items, item)
-        
-        # convert IndexError to KeyError
-        try:
-            if self.items[i][0] == fkey:
-                return self.items[i][1]
-            else:
-                raise KeyError("Key not found")
-        except IndexError:
-            raise KeyError("Key not found")
-       
+	def __delitem__(self, key):
+		""" Deletes a given keypoint """
+		self.be_table()
+		del self.points[float(key)]
 
+	def __len__(self):
+		""" Returns the range of the indices """
+		if len(self.points) > 0:
+			return fabs(self.points[-1].index - self.points[0].index)
+		else:
+			return 0.0
 
-    def __delitem__(self, key):
-        """ Deletes a given keypoint """
-        fkey = float(key)
-        item = (fkey, 0)
-        i = bisect_left(self.items, item)
+	def __repr__(self):
+		""" Formal description of the object """
+		# Dump the contents into a dict style string
+		self.be_sorted()
+		lst = string.join([string.join( (str(i[0]), str(i[1]) ), ":") for i in self.points], ",")
+		# spit the whole thing out
+		return "%s(data={%s})" % (type(self).__name__, lst)
 
-        # convert IndexError to KeyError
-        try:
-            if self.items[i][0] == fkey:
-                del self.items[i]
-            else:
-                raise KeyError("Key not found")
-        except IndexError:
-            raise KeyError("Key not found")
-
-    def __len__(self):
-        """ Returns the range of the indices """
-        if len(self.items) > 0:
-            return fabs(self.items[-1].index - self.items[0].index)
-        else:
-            return 0.0
-
-    def __repr__(self):
-        """ Formal description of the object """
-        # Dump the contents into a dict style string
-        lst = string.join([string.join( (str(i[0]), str(i[1]) ), ":") for i in self.items], ",")
-        # spit the whole thing out
-        return "%s(data={%s})" % (type(self).__name__, lst)
-
-    def __iter__(self):
-        """ Returns an iterator which can traverse the list """
-        return self.items.__iter__()
-        
-        
+	def __iter__(self):
+		""" Returns an iterator which can traverse the list """
+		return self.points.__iter__()
+		
+		
 # Simple regression tests
 
 class TestAccessing(TestCase):
@@ -146,6 +119,27 @@ class TestAccessing(TestCase):
 		del self.mapping[0]
 		self.assertFalse(0 in self.mapping)
 		
+	def testNegativeKey(self):
+		self.mapping[-1] = 0
+		self.assertEqual(self.mapping[-1], 0)
+		self.assertEqual(self.mapping(-1), 0)
+		self.assertEqual(self.mapping(-0.5), 3.5)
+		
+	def testNegativeValue(self):
+		self.mapping[1] = -7
+		self.assertEqual(self.mapping[1], -7)
+		self.assertEqual(self.mapping(1), -7)
+		self.assertEqual(self.mapping(0.5), 0)
+
+
+class TestPrinting(TestCase):
+
+	def testEmpty(self):
+		self.assertEqual(''.join([c for c in `InterpoList()` if not c.isspace()]), 'InterpoList(data={})')
+		
+	def testOne(self):
+		self.assertEqual(''.join([c for c in `InterpoList(data={0:7})` if not c.isspace()]), 'InterpoList(data={0.0:7.0})')
+
 		
 class TestSingleton(TestCase):
 
@@ -188,4 +182,4 @@ class TestReversion(TestCase):
 		
 
 if __name__ == '__main__':
-    run_tests()
+	run_tests()
