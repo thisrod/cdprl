@@ -30,26 +30,27 @@ class InterpoList(MutableMapping, Callable):
 	# self.points stores the known points.  subscript operations convert it to a dict, and interpolation to a sorted list of (abscissa, ordinate) pairs.
 		
 	def be_table(self):
-		self.points = dict(self.points)
+		self.sampling = None
 		
 	def be_sorted(self):
-		if type(self.points) is dict:
-			self.points = self.points.items()
-			self.points.sort()
+		self.sampling = self.points.keys()
+		self.sampling.sort()
+		
+	def series(self, i):
+		"""return the ith sample point."""
+		return (self.sampling[i], self.points[self.sampling[i]])
 		
 	def points_around(self, x):
-		"""return the points with abscissae either side of x.  if x is the abscissa of a point, return that point, and up to two surrounding ones if it has them."""
+		"""if x was sampled, return it.  otherwise, return the sampled abscissae either side x."""
 		self.be_sorted()
 		abscissa = float(x)
 		if self.extrapolation(abscissa):
 			raise IndexError("Extrapolation is not supported")
-		sampling = [p[0] for p in self.points]
-		i = bisect_left(sampling, abscissa)
-		# in case x is exactly the limit of data
-		if i == 0:
-			return self.points[0:2]
+		i = bisect_left(self.sampling, abscissa)
+		if self.sampling[i] == abscissa:
+			return [self.series(i)]
 		else:
-			return self.points[i-1: i+1]
+			return [self.series(i-1), self.series(i)]
 		
 	
 	def ordinate(self, abscissa, neighbours):
@@ -61,11 +62,25 @@ class InterpoList(MutableMapping, Callable):
 	def extrapolation(self, abscissa):
 		""" Is abscissa outside the domain of my data? """
 		self.be_sorted()
-		return self.points[0][0] > abscissa or self.points[-1][0] < abscissa
+		return self.sampling[0] > abscissa or self.sampling[-1] < abscissa
 
 	def __call__(self, x):
 		""" Returns the value interpolated for a given abscissa """
-		return self.ordinate(x, self.points_around(x))
+		neighbours = self.points_around(x)
+		if len(neighbours) is 1:
+			return neighbours[0][1]
+		else:
+			return self.ordinate(x, neighbours)
+			
+	def derivative(self, x):
+		""" Returns the derivative of the interpolated function at a given abscissa.  doesn't try hard at sampled points"""
+		neighbours = self.points_around(x)
+		if len(neighbours) is 1:
+			return 0
+		else:
+			(preabs, preord), (postabs, postord) =  neighbours
+			return (postord - preord) / (postabs - preabs)
+		
 					
 	def __setitem__(self, key, value):
 		""" adds a new keypoint or replaces a current one """
@@ -93,7 +108,7 @@ class InterpoList(MutableMapping, Callable):
 		""" Formal description of the object """
 		# Dump the contents into a dict style string
 		self.be_sorted()
-		lst = string.join([string.join( (str(i[0]), str(i[1]) ), ":") for i in self.points], ",")
+		lst = string.join([string.join( (str(x), str(self.points[x]) ), ":") for x in self.sampling], ",")
 		# spit the whole thing out
 		return "%s(data={%s})" % (type(self).__name__, lst)
 
@@ -137,10 +152,10 @@ class TestAccessing(TestCase):
 		self.assertEqual(self.mapping(0.5), 0)
 		
 	def testLogic(self):
-		self.assertEqual(self.triangle.points_around(-1.3), [(-1.3, 10), (0, 0)])
+		self.assertEqual(self.triangle.points_around(-1.3), [(-1.3, 10)])
 		self.assertEqual(self.triangle.points_around(-1), [(-1.3, 10), (0, 0)])
 		self.assertEqual(self.triangle.points_around(0.5), [(0, 0), (1, 5.2)])
-		self.assertEqual(self.triangle.points_around(1), [(0, 0), (1, 5.2)])
+		self.assertEqual(self.triangle.points_around(1), [(1, 5.2)])
 		
 
 
