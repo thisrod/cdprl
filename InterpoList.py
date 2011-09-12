@@ -37,11 +37,25 @@ class InterpoList(MutableMapping, Callable):
 			self.points = self.points.items()
 			self.points.sort()
 		
-	def ordinate(self, abscissa, i):
-		"""return the ordinate at abscissa of the line through points i-1 and i.  this only makes sense if the sorted list representation is in use.  beware rounding near known points."""
+	def points_around(self, x):
+		"""return the points with abscissae either side of x.  if x is the abscissa of a point, return that point, and up to two surrounding ones if it has them."""
+		self.be_sorted()
+		abscissa = float(x)
+		if self.extrapolation(abscissa):
+			raise IndexError("Extrapolation is not supported")
+		sampling = [p[0] for p in self.points]
+		i = bisect_left(sampling, abscissa)
+		# in case x is exactly the limit of data
+		if i == 0:
+			return self.points[0:2]
+		else:
+			return self.points[i-1: i+1]
 		
-		preabs, preord =  self.points[i-1]
-		postabs, postord = self.points[i]
+	
+	def ordinate(self, abscissa, neighbours):
+		"""return the ordinate at abscissa of the line through neighbours.  beware rounding near known points."""
+		
+		(preabs, preord), (postabs, postord) =  neighbours
 		return (preord*(postabs-abscissa) + postord*(abscissa-preabs)) / (postabs-preabs)
 		
 	def extrapolation(self, abscissa):
@@ -51,17 +65,7 @@ class InterpoList(MutableMapping, Callable):
 
 	def __call__(self, x):
 		""" Returns the value interpolated for a given abscissa """
-		self.be_sorted()
-		abscissa = float(x)
-		if self.extrapolation(abscissa):
-			raise IndexError("Extrapolation is not supported")
-		sampling = [p[0] for p in self.points]
-		i = bisect_left(sampling, abscissa)
-		# this test is needed in case i == 0
-		if sampling[i] == abscissa:
-			return self.points[i][1]
-		else:
-			return self.ordinate(abscissa, i)
+		return self.ordinate(x, self.points_around(x))
 					
 	def __setitem__(self, key, value):
 		""" adds a new keypoint or replaces a current one """
@@ -105,6 +109,7 @@ class TestAccessing(TestCase):
 	def setUp(self):
 		self.empty = InterpoList()
 		self.mapping = InterpoList(data = {0: 7})
+		self.triangle = InterpoList(data = {-1.3: 10, 0: 0, 1:5.2})
 		
 	def testAdding(self):
 		self.empty[0] = 3
@@ -130,6 +135,13 @@ class TestAccessing(TestCase):
 		self.assertEqual(self.mapping[1], -7)
 		self.assertEqual(self.mapping(1), -7)
 		self.assertEqual(self.mapping(0.5), 0)
+		
+	def testLogic(self):
+		self.assertEqual(self.triangle.points_around(-1.3), [(-1.3, 10), (0, 0)])
+		self.assertEqual(self.triangle.points_around(-1), [(-1.3, 10), (0, 0)])
+		self.assertEqual(self.triangle.points_around(0.5), [(0, 0), (1, 5.2)])
+		self.assertEqual(self.triangle.points_around(1), [(0, 0), (1, 5.2)])
+		
 
 
 class TestPrinting(TestCase):
@@ -179,6 +191,15 @@ class TestReversion(TestCase):
 		del self.mapping[0]
 		self.assertTrue(-1e-10 < self.mapping(0))
 		self.assertTrue(self.mapping(0) < 1e-10)
+		
+		
+class TestDerivative(TestCase):
+	def setUp(self):
+		self.mapping = InterpoList(data = {-1:0, 0:7, 1:0})
+		
+	def testValues(self):
+		self.assertEqual(self.mapping.derivative(-0.5), 7)
+		self.assertEqual(self.mapping.derivative(0.5), -7)
 		
 
 if __name__ == '__main__':
