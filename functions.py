@@ -4,6 +4,7 @@ from numpy import array, mat, diagonal, diagflat as make_diagonal, zeros, identi
 from InterpoList import InterpoList as Interpolation
 from collections import MutableMapping, Callable
 from pairs import Pair, cons
+from random import getstate, setstate, seed, normalvariate
 
 
 class Simulator:
@@ -108,20 +109,50 @@ class ProcessSpecialisedNoise:
 		return self.noise.derivatives(self.indices, start, duration)
 		
 		
-class DiscreteNoise:
+class DiscreteNoise(Noise):
 
 	"""This noise source seeds a Python PRNG for each process and run_labels, which generates independent derivatives for intervals of length timestep, starting from time 0."""
 
-	def __init__(self, timestep, run_labels): pass
+	def __init__(self, timestep, *run_labels):
+		self.timestep, self.run_labels = timestep, run_labels
+		self.rngs = {}
+		self.installed_indices = self.step = None
 	
 	def derivatives(self, indices, start_time, duration):
-		start = start_time / self.timestep
-		steps = duration / self.timestep
+		start = int(round(start_time / self.timestep))
+		steps = int(round(duration / self.timestep))
 		
 		# only handle one index for now
-		setstate(self.state(indices, start_time))
-		position = positions[indices]
+		self.install(indices)
+		self.advance(start)
+		mean = sum([self.step_derivative() for i in range(steps)]) / steps
+		return mean
 		
+	def install(self, indices):
+		if self.installed_indices == indices: return
+		self.rngs[self.installed_indices] = (getstate(), self.step)
+		if indices not in self.rngs:
+			self.initialize(indices)
+		else:
+			state, self.step = self.rngs[indices]
+			setstate(state)
+			self.installed_indices = indices
+				
+	def advance(self, start):
+		if self.step > start:
+			self.initialize(self.installed_indices)
+		while self.step < start:
+			normalvariate(0, 1)
+			self.step = self.step + 1
+			
+	def initialize(self, indices):
+		seed((self.run_labels, indices))
+		self.installed_indices = indices
+		self.step = 0
+		
+	def step_derivative(self):
+		self.step = self.step + 1
+		return normalvariate(mu = 0, sigma = 1/sqrt(self.timestep))
 	
 	
 class SemiImplicitIntegrator:

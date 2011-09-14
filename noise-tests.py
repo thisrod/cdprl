@@ -1,26 +1,24 @@
+from unittest import TestCase, main as run_tests
+from functions import *
+
 ## Tests of the prng
 
-class TestNoise(TestCase):
-
-	"noise(n, dt)*dt is a n*n matrix with Wiener increments on the diagonal, and zeros elsewhere." 
+class TestSingleProcess(TestCase):
 
 	def setUp(self):
-		self.sites = 10
+		self.source = DiscreteNoise(0.1)
 		
-	def testShape(self):
-		self.assertEqual(noise(self.sites, 1).shape, (self.sites,))
+	def testType(self):
+		self.assertTrue(type(self.source[0](0.5,0.2)) is float)
 			
-	def testDiagonal(self):
-		self.assertTrue(is_diagonal(noise(self.sites, 1)))
-	
 	def testIndependentElements(self):
-		samples = noise(self.sites, 1).diagonal()
-		self.assertEqual(len(set(samples)), self.sites)
+		samples = [self.source[0](0.1*t, 0.1) for t in range(20)]
+		self.assertEqual(len(set(samples)), 20)
 		
 	def testOrderMagnitude(self):
 		"The mean square noise probably has the same order of magnitude as the timestep.  (Try again if it doesn't)"
-		for step in 1, 0.1, 1e-5:
-			samples = noise(self.sites, step).diagonal()
+		for step in 10, 1, 0.1:
+			samples = array([self.source[0](step*t, step) for t in range(20)])
 			variance = (step*samples).var()
 			self.assertTrue(step/3 < variance and variance < 3*step)
 
