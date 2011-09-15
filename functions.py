@@ -72,6 +72,8 @@ class Noise:
 	
 	If x is a noise source, x[i] is the ith process, and x[i](t, dt) is its average derivative from t to t+dt.  This can also be written x(t, dt)[i], because x(t, dt) is a sequence of the derivatives of all processes.
 	
+	As a special case, x(t, 0) is zero.  This ensures dx = 0 when dt = 0, when there's a 0*Infinity ambiguity.  
+	
 	Subclasses need to override __init__, to handle their run labels, and derivatives, to generate the noise."""
 
 	def __init__(self, *run_labels):
@@ -118,12 +120,13 @@ class DiscreteNoise(Noise):
 		self.rngs = {}
 		self.installed_indices = self.step = None
 	
-	def derivatives(self, indices, start_time, duration):
+	def derivatives(self, index, start_time, duration):
+		if duration == 0: return 0
 		start = int(round(start_time / self.timestep))
 		steps = int(round(duration / self.timestep))
 		
 		# only handle one index for now
-		self.install(indices)
+		self.install(index)
 		self.advance(start)
 		mean = sum([self.step_derivative() for i in range(steps)]) / steps
 		return mean
@@ -157,16 +160,26 @@ class DiscreteNoise(Noise):
 	
 class SemiImplicitIntegrator:
 
-	# I stochastically integrate a single sample	
+	# I stochastically integrate a single sample, starting at time 0
 
 	def __init__(self, a_simulation, a_noise_source, timestep):
-		self.sltn = a_simulation
-		self.timestep = timestep
-		self.source = a_noise_source
+		self.system = a_simulation
+		self.timestep = float(timestep)
+		self.noise = a_noise_source
 		
-	def integrate(self, start, finish, a_record, **run_labels): pass
-		# Integrates a single run.  The labels are passed on to the recorder.
-	
+	def integrate(self, initial_state, duration, record, **run_labels):
+		t = 0
+		state = initial_state
+		next_sample_time = 0
+		while t <= duration:
+			if t > (next_sample_time - 0.5*self.timestep):
+				record[t] = self.system.moments(state)
+				next_sample_time = record.after(next_sample_time)
+			halfstep = state
+			xis = [self.noise[i](t, self.timestep) for i in self.system.noise_required(state)]
+			for i in range(4):
+				halfstep = state + 0.5*self.timestep*self.system.derivative(t, halfstep, xis)
+			t, state = t + self.timestep, state + self.timestep*self.system.derivative(t, halfstep, xis)
 	
 class Record(MutableMapping, Callable):
 
