@@ -15,6 +15,12 @@ class TestSingleProcess(TestCase):
 		samples = [self.source[0](0.1*t, 0.1) for t in range(20)]
 		self.assertEqual(len(set(samples)), 20)
 		
+	def testIndependentProcesses(self):
+		first = [self.source[0](0.1*t, 0.1) for t in range(20)]
+		second = [self.source[1](0.1*t, 0.1) for t in range(20)]
+		self.assertEqual(len(set(first+second)), 40)
+		
+		
 	def testOrderMagnitude(self):
 		"The mean square noise probably has the same order of magnitude as the timestep.  (Try again if it doesn't)"
 		for step in 10, 1, 0.1:
