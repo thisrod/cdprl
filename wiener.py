@@ -9,13 +9,22 @@ from scipy.special import erfinv
 from InterpoList import InterpoList as Interpolation
 from math import floor, ceil as ceiling, sqrt, log
 from itertools import islice
+from functions import Noise
 
-## For now, we simulate a Brownian Bridge process from time 0 to 1.  A Wiener process can be recovered by adding a random slope.
+
+class WienerNoise(Noise):
+	def __init__(self, *run_labels):
+		n = hash(run_labels)
+		for i in range(4):
+			n, self.key[i] = divmod(n, 0x100000000)
 
 ## Return the sequence of interpolations, that contribute to the process at time t.
 
 def W(n, t):
 	return sum([f(t) for f in take(n, triangle_sequence(t, 0))])
+
+def Wdot(n, t):
+	return sum([f.derivative(t) for f in take(n, triangle_sequence(t, 0))])
 	
 cached_seed = None
 triangle_cache = {}
