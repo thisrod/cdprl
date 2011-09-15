@@ -85,7 +85,7 @@ class InterpoList(MutableMapping, Callable):
 	def __setitem__(self, key, value):
 		""" adds a new keypoint or replaces a current one """
 		self.be_table()
-		self.points[float(key)] = float(value)
+		self.points[float(key)] = value
 			
 	def __getitem__(self, key):
 		""" Answers the value stored for key, if there is one """
@@ -160,12 +160,12 @@ class TestAccessing(TestCase):
 
 
 class TestPrinting(TestCase):
-
+	# A roundtrip test would be better, but this would need equality testing on interpolations.
 	def testEmpty(self):
 		self.assertEqual(''.join([c for c in `InterpoList()` if not c.isspace()]), 'InterpoList(data={})')
 		
 	def testOne(self):
-		self.assertEqual(''.join([c for c in `InterpoList(data={0:7})` if not c.isspace()]), 'InterpoList(data={0.0:7.0})')
+		self.assertEqual(''.join([c for c in `InterpoList(data={0:7.0})` if not c.isspace()]), 'InterpoList(data={0.0:7.0})')
 
 		
 class TestSingleton(TestCase):
