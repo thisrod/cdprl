@@ -1,7 +1,8 @@
 from functions import *
 from math import sqrt
-from numpy import array, mat, diagonal, diagflat as make_diagonal, zeros, identity as unit, logical_or
+from numpy import array, mat, diagonal, diagflat as make_diagonal, zeros, identity as unit, logical_or, isnan
 from unittest import TestCase, main as run_tests
+from pairs import Pair
 		
 		
 # Test data
@@ -128,14 +129,35 @@ class TestSimulatorInterface(TestCase):
 
 	def setUp(self):
 		self.sltr = Simulator(repulsion = 1, chemical_potential = 0.5, hopping = 2, timestep = 0.1)
-		self.state = (1, array([unit(5), unit(5)]))
+		self.state = Pair(1, array([unit(5), unit(5)]))
 	
 	def testNoise(self):
-		self.assertTrue(self.sltr.noise_required(self.state) == 10)
+		self.assertTrue(len(self.sltr.noise_required(self.state)) == 10)
 
 	def testDerivativeShape(self):
-		deriv = self.sltr.derivative(0, self.state, zeros(self.sltr.noise_required(self.state)))
-		self.assertTrue(len(deriv) is 2)
-		self.assertTrue(deriv[1].shape == self.state[1].shape)
+		deriv = self.sltr.derivative(0, self.state, 0*array(self.sltr.noise_required(self.state)))
+		self.assertTrue(isinstance(deriv, Pair))
+		self.assertTrue(deriv.cdr.shape == self.state.cdr.shape)
+		
+	def testInitialDerivative(self):
+		deriv = self.sltr.derivative(0, self.sltr.initial(), 0*array(self.sltr.noise_required(self.sltr.initial())))
+		
 
 
+class IntegrationTest(TestCase):
+		
+	def setUp(self):
+		self.moments = Record(timestep = 1)
+		self.noise = DiscreteNoise(timestep = 0.01)
+		self.system = Simulator(repulsion = 0.5, hopping = 0, chemical_potential = 0)
+		self.integrator = SemiImplicitIntegrator(self.system, self.noise, timestep = 0.01)
+		self.integrator.integrate(self.system.initial(), 3.1, self.moments)
+		
+	def testSolution(self):
+		for t in range(3):
+			computed = self.moments(t)
+			self.assertFalse(isnan(computed).any())
+			
+
+if __name__ == '__main__':
+	run_tests()

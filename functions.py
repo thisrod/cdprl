@@ -11,6 +11,10 @@ class Simulator:
 
 	# I remember the physical parameters of the Fermi-Hubbard model, and compute the derivatives of the Greens' function and weight.
 
+	"""Parameters: repulsion, hopping, chemical_potential
+	
+	The state is represented as a tuple of the weight, and a 2xsitesxsites array of the up and down greens functions"""
+
 	def __init__(self, model = None, **parameters):
 		if model is not None:
 			self.__dict__ = model.__dict__.copy()
@@ -51,19 +55,23 @@ class Simulator:
 			- self.chemical_potential * ( diagonal(normal_greens[0,:,:]) + diagonal(normal_greens[1,:,:]) ).sum()
 			
 	def derivative(self, time, state, noise):
-		# state is a tuple of weight and Greens' functions
-		return (state[0]*self.weight_log_dot(state[1]), array([self.greens_dot(state[1], 0, noise), self.greens_dot(state[1], 1, noise)]))
+		# state is a pair of weight and Greens' functions
+		return Pair(state.car*self.weight_log_dot(state.cdr), array([self.greens_dot(state.cdr, 0, noise), self.greens_dot(state.cdr, 1, noise)]))
 		
 	def noise_required(self, state):
-		greens = state[1]
-		return 2*greens.shape[2]
+		greens = state.cdr
+		return range(2*greens.shape[2])
 		
 	def weight(self, state):
 		return state[0]
 		
 	def moments(self, state):
 		# The moments to be collected are the Green's functions
-		return state[1]
+		return state.cdr
+
+	def initial(self):
+		unit = [[0, 1], [1, 0]]
+		return Pair(1.0, array([unit, unit]))
 
 
 class Noise:
@@ -176,7 +184,7 @@ class SemiImplicitIntegrator:
 				record[t] = self.system.moments(state)
 				next_sample_time = record.after(next_sample_time)
 			halfstep = state
-			xis = [self.noise[i](t, self.timestep) for i in self.system.noise_required(state)]
+			xis = array([self.noise[i](t, self.timestep) for i in self.system.noise_required(state)])
 			for i in range(4):
 				halfstep = state + 0.5*self.timestep*self.system.derivative(t, halfstep, xis)
 			t, state = t + self.timestep, state + self.timestep*self.system.derivative(t, halfstep, xis)
