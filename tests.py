@@ -1,4 +1,6 @@
-from functions import *
+from fermi_hubbard import *
+from integration import *
+from noise import *
 from math import sqrt
 from numpy import array, mat, diagonal, diagflat as make_diagonal, zeros, identity as unit, logical_or, isnan
 from unittest import TestCase, main as run_tests
