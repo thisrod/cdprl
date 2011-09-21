@@ -153,13 +153,20 @@ class IntegrationTest(TestCase):
 		self.noise = DiscreteNoise(timestep = 0.01)
 		self.system = Simulator(repulsion = 0.5, hopping = 0, chemical_potential = 0)
 		self.integrator = SemiImplicitIntegrator(self.system, self.noise, timestep = 0.01)
-		self.integrator.integrate(self.system.initial(), 3.1, self.moments)
 		
 	def testSolution(self):
+		self.integrator.integrate(self.system.initial(), 3.1, self.moments)
 		for t in range(3):
 			computed = self.moments(t)
 			self.assertFalse(isnan(computed).any())
-			
+
+
+def show_state(state):
+	if isinstance(state, Pair):
+		w, x = state.car, state.cdr
+	else:
+		w, x = 1, state
+	print "%.3f\t\t%.3f\t%.3f\t\t%.3f\t%.3f\n\t\t\t%.3f\t%.3f\t\t%.3f\t%.3f\n" % (w, x[0,0,0], x[0,0,1], x[1,0,0], x[1,0,1], x[0,1,0], x[0,1,1], x[1,1,0], x[1,1,1])
 
 if __name__ == '__main__':
 	run_tests()
