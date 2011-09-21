@@ -37,7 +37,7 @@ Integration is carried out by four classes.  Three of them, <tt>Integrator</tt>,
 * stores numerical parameters, most notably the timestep,
 * adds up the increments of the system state at each timestep,
 * passes moments to the <tt>Record</tt> at the times it requests.
-* 
+
 Subclasses implement particular algorithms, by the method <tt>increment</tt> which
 
 * computes the increment of the state over a specified timestep.
