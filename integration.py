@@ -1,8 +1,11 @@
-	
-	
-class SemiImplicitIntegrator:
+from collections import MutableMapping, Callable
+from InterpoList import InterpoList as Interpolation
+from pairs import Pair, cons
+from numpy import array
 
-	# I stochastically integrate a single sample, starting at time 0
+# StepwiseIntegrator computes steps with the increment method, which must be overridden by subclasses.
+
+class Integrator:
 
 	def __init__(self, a_simulation, a_noise_source, timestep):
 		self.system = a_simulation
@@ -10,6 +13,7 @@ class SemiImplicitIntegrator:
 		self.noise = a_noise_source
 		
 	def integrate(self, initial_state, duration, record, **run_labels):
+		"""stochastically integrate a single sample, starting at time 0"""
 		t = 0
 		state = initial_state
 		next_sample_time = 0
@@ -17,11 +21,18 @@ class SemiImplicitIntegrator:
 			if t > (next_sample_time - 0.5*self.timestep):
 				record[t] = self.system.moments(state)
 				next_sample_time = record.after(next_sample_time)
-			halfstep = state
-			xis = array([self.noise[i](t, self.timestep) for i in self.system.noise_required(state)])
-			for i in range(4):
-				halfstep = state + 0.5*self.timestep*self.system.derivative(t, halfstep, xis)
-			t, state = t + self.timestep, state + self.timestep*self.system.derivative(t, halfstep, xis)
+			t, state = t + self.timestep, state + self.increment(t, state)
+
+	
+class SemiImplicitIntegrator(Integrator):
+		
+	def increment(self, t, state):
+		halfstep = state
+		xis = array([self.noise[i](t, self.timestep) for i in self.system.noise_required(state)])
+		for i in range(4):
+			halfstep = state + 0.5*self.timestep*self.system.derivative(t, halfstep, xis)
+		return self.timestep*self.system.derivative(t, halfstep, xis)
+		
 
 	
 class Record(MutableMapping, Callable):

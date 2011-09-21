@@ -1,10 +1,7 @@
-from math import sqrt
 from numpy.random import randn as normal_deviates
 from numpy import array, mat, diagonal, diagflat as make_diagonal, zeros, identity as unit, logical_or
-from InterpoList import InterpoList as Interpolation
-from collections import MutableMapping, Callable
 from pairs import Pair, cons
-from random import getstate, setstate, seed, normalvariate
+from math import sqrt
 
 
 class Simulator:
