@@ -14,7 +14,7 @@ def greens_specimens():
 		yield array(it)
 		
 def simulator_specimens():
-	yield Simulator(repulsion = 1, chemical_potential = 0.5, hopping = 2, timestep = 0.1)
+	yield Simulator(sites = 2, repulsion = 1, chemical_potential = 0.5, hopping = 2)
 	
 def noise_specimens(sites):
 	yield zeros(2*sites)
@@ -50,10 +50,6 @@ class TestAccessing(TestCase):
 	def testHopping(self):
 		self.assertEqual(self.original.hopping, 2)
 		self.assertEqual(self.copy.hopping, 5)
-		
-	def testTimestep(self):
-		self.assertEqual(self.original.timestep, 0.1)
-		self.assertEqual(self.copy.timestep, 0.1)
 	
 	
 class TestRepulsionTerms(TestCase):
@@ -130,7 +126,7 @@ class TestWeightDerivative(TestCase):
 class TestSimulatorInterface(TestCase):
 
 	def setUp(self):
-		self.sltr = Simulator(repulsion = 1, chemical_potential = 0.5, hopping = 2, timestep = 0.1)
+		self.sltr = Simulator(sites = 2, repulsion = 1, chemical_potential = 0.5, hopping = 2)
 		self.state = Pair(1, array([unit(5), unit(5)]))
 	
 	def testNoise(self):
@@ -151,7 +147,7 @@ class IntegrationTest(TestCase):
 	def setUp(self):
 		self.moments = Record(timestep = 1)
 		self.noise = DiscreteNoise(timestep = 0.01)
-		self.system = Simulator(repulsion = 0.5, hopping = 0, chemical_potential = 0)
+		self.system = Simulator(sites = 2, repulsion = 0.5, hopping = 0, chemical_potential = 0)
 		self.integrator = SemiImplicitIntegrator(self.system, self.noise, timestep = 0.01)
 		
 	def testSolution(self):
