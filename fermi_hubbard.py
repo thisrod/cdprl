@@ -67,7 +67,7 @@ class Simulator:
 		return state.cdr
 
 	def initial(self):
-		id = unit(self.sites)
+		id = unit(self.sites[0])
 		return Pair(1.0, array([id, id]))
 		
 			
