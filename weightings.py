@@ -25,6 +25,9 @@ class Weighting:
 		return Weighting(self.mean/scalar, self.weight/scalar)
 		
 	def combine(self, other):
+		# FIXME: The next two lines show why it's better to store mean*weight than mean (except that it adds a round-trip problem).  Maybe the correct answer is to store the value on construction, then coerce to a total if combined with a different mean and non-zero weight.  This could be done as three subclasses: ZeroWeighting, SingleValueWeighting, CombinedValueWeighting
+		if self.weight == 0: return other
+		if other.weight == 0: return self
 		weight = self.weight + other.weight
 		mean = (self.mean*self.weight + other.mean*other.weight) / weight
 		return Weighting(mean, weight)

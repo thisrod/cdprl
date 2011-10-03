@@ -1,7 +1,8 @@
 # Tests that a stochastic integrator gives the right answers for a Kubo oscillator.
 
 from unittest import TestCase, main as run_tests
-from functions import *
+from integration import *
+from noise import DiscreteNoise
 from cmath import exp
 
 class KuboOscillator:

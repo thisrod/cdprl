@@ -1,4 +1,5 @@
 # Lisp in Python, all because some clever dick overrode + for list concatenation.
+# I was only using this for (weight, value) pairs, which are now the class Weighting.
 
 from numbers import Number
 

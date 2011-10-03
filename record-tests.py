@@ -1,7 +1,7 @@
 # Tests of the class Record
 
 from unittest import TestCase, main as run_tests
-from functions import *
+from integration import *
 
 
 class TestAccessing(TestCase):

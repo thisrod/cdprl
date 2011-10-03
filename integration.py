@@ -1,6 +1,6 @@
 from collections import MutableMapping, Callable
 from InterpoList import InterpoList as Interpolation
-from pairs import Pair, cons
+from weightings import Weighting
 from numpy import array
 
 # StepwiseIntegrator computes steps with the increment method, which must be overridden by subclasses.
@@ -40,12 +40,12 @@ class Record(MutableMapping, Callable):
 	""" I average the results of trial runs """
 	
 	# results is a dictionary of run_labels
-	# results[run_label] is an Interpolation from times to (weight, moments) pairs 
-	# moments need to interpret + and * as elemental operations.  I.e., ndarrays are in, but lists and tuples are out.  This prevents the use of (weight, moment) tuples - I've defined a special Pair class to handle it.
+	# results[run_label] is an Interpolation from times to Weightings
+	# moments need to interpret + and * as elemental operations.  I.e., ndarrays are in, but lists and tuples are out.
 	
 	# self[t] is a tuple of weight and moments.  self[t] = moments implies the weight is 1.0
 
-	# Python bogosity warning: x[2] means x.__getitem__(2), but x[2,3] means x.__getitem__((2,3))
+	# warning: Python ad-hocity: x[2] means x.__getitem__(2), but x[2,3] means x.__getitem__((2,3))
 	
 	def __init__(self, timestep):
 		self.timestep = timestep
@@ -68,8 +68,10 @@ class Record(MutableMapping, Callable):
 			
 	def __call__(self, key):
 		time, prefix = self.demux_key(key)
-		sample = [self.results[label](time) for label in self.results if label[0:len(prefix)]==prefix]
-		return sum([s.car * s.cdr for s in sample]) / sum([s.car for s in sample])
+		total = Weighting(0, 0)
+		for x in [self.results[label](time) for label in self.results if label[0:len(prefix)]==prefix]:
+			total = total.combine(x)
+		return total.mean
 	
 	def __delitem__(self, key): pass 
 	
@@ -82,14 +84,12 @@ class Record(MutableMapping, Callable):
 		weight, moments = self.demux_value(value)
 		if run_label not in self.results:
 			self.results[run_label] = Interpolation()
-		self.results[run_label][time] = cons(weight, moments)
+		self.results[run_label][time] = Weighting(moments, weight)
 		
 	def __getitem__(self, key):
 		time, run_label = self.demux_key(key)
-		return self.results[run_label][time].astuple()	# This could raise a genuine IndexError
+		w = self.results[run_label][time]
+		return w.weight, w.mean 
 	
 	def after(self, time):
 		return time + self.timestep
-
-	def mean(self, time):
-		return mean([self.value(time, i) for i in self.results])

@@ -48,6 +48,7 @@ class AverageTest(TestCase):
 		self.this = Weighting(0.4, 0.7)
 		self.that = Weighting(0.4, 2.5)
 		self.other = Weighting(0.1, 1.4)
+		self.zero = Weighting(0, 0)
 	
 	def testSame(self):
 		self.assertTrue(allclose(self.this.combine(self.that).mean, 0.4))
@@ -56,6 +57,9 @@ class AverageTest(TestCase):
 	def testDifferent(self):
 		self.assertTrue(allclose(self.this.combine(self.other).mean, 0.2))
 		self.assertTrue(allclose(self.this.combine(self.other).weight, 0.7+1.4))
+		
+	def testZero(self):
+		self.assertEqual(self.this.combine(self.zero), self.this)
 		
 
 if __name__ == '__main__':
