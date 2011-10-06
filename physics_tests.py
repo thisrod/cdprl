@@ -14,7 +14,7 @@ def greens_specimens():
 		yield array(it)
 		
 def simulator_specimens():
-	yield Simulator(sites = [2], repulsion = 1, chemical_potential = 0.5, hopping = 2)
+	yield FermiHubbardSystem(sites = [2], repulsion = 1, chemical_potential = 0.5, hopping = 2)
 	
 def noise_specimens(sites):
 	yield zeros(2*sites)
@@ -36,8 +36,8 @@ class TestDerivations(TestCase):
 class TestAccessing(TestCase):
 
 	def setUp(self):
-		self.original = Simulator(sites = [2], repulsion = 1, chemical_potential = 0.5, hopping = 2)
-		self.copy = Simulator(self.original, hopping = 5)
+		self.original = FermiHubbardSystem(sites = [2], repulsion = 1, chemical_potential = 0.5, hopping = 2)
+		self.copy = FermiHubbardSystem(self.original, hopping = 5)
 		
 	def testRepulsion(self):
 		self.assertEqual(self.original.repulsion, 1)
@@ -54,7 +54,7 @@ class TestAccessing(TestCase):
 	
 class TestRepulsionTerms(TestCase):
 
-	"Simulator.repulsion_terms(n, spin) computes |U|(s n_jj(-spin) - n_jj,spin + 1/2)"
+	"FermiHubbardSystem.repulsion_terms(n, spin) computes |U|(s n_jj(-spin) - n_jj,spin + 1/2)"
 	
 	def testShape(self):
 		for sltr, greens, spin in specimens():
@@ -72,7 +72,7 @@ class TestRepulsionTerms(TestCase):
 		"Tripling U triples the repulsion term"
 		
 		for sltr, greens, spin in specimens():
-			triple_sltr = Simulator(sltr, repulsion = 3*sltr.repulsion)
+			triple_sltr = FermiHubbardSystem(sltr, repulsion = 3*sltr.repulsion)
 			weak = sltr.repulsion_terms(greens, spin)
 			strong = triple_sltr.repulsion_terms(greens, spin)
 			self.assertTrue((3*weak == strong).all())
@@ -108,7 +108,7 @@ class TestGreensDerivative(TestCase):
 	def testScaling(self):
 		"Tripling U and scaling the noise input by 1/sqrt(3) cancel out."
 		for sltr, greens, spin in specimens():
-			scaled_sltr = Simulator(sltr, repulsion = sltr.repulsion * 3)
+			scaled_sltr = FermiHubbardSystem(sltr, repulsion = sltr.repulsion * 3)
 			for noise in noise_specimens(greens.shape[1]):
 					self.assertTrue((scaled_sltr.greens_dot(greens, spin, noise) == scaled_sltr.greens_dot(greens, spin, noise)).all())
 
@@ -123,10 +123,10 @@ class TestWeightDerivative(TestCase):
 		self.assertTrue(False, "No one has checked Rodney's expectation value for the Hamiltonian")
 
 
-class TestSimulatorInterface(TestCase):
+class TestFermiHubbardSystemInterface(TestCase):
 
 	def setUp(self):
-		self.sltr = Simulator(sites = [2], repulsion = 1, chemical_potential = 0.5, hopping = 2)
+		self.sltr = FermiHubbardSystem(sites = [2], repulsion = 1, chemical_potential = 0.5, hopping = 2)
 		self.state = Pair(1, array([unit(5), unit(5)]))
 	
 	def testNoise(self):
@@ -147,7 +147,7 @@ class IntegrationTest(TestCase):
 	def setUp(self):
 		self.moments = Record(timestep = 1)
 		self.noise = DiscreteNoise(timestep = 0.01)
-		self.system = Simulator(sites = [2], repulsion = 0.5, hopping = 0, chemical_potential = 0)
+		self.system = FermiHubbardSystem(sites = [2], repulsion = 0.5, hopping = 0, chemical_potential = 0)
 		self.integrator = SemiImplicitIntegrator(self.system, self.noise, timestep = 0.01)
 		
 	def testSolution(self):

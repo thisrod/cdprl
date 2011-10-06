@@ -1,16 +1,18 @@
 from numpy.random import randn as normal_deviates
 from numpy import array, mat, diagonal, diagflat as make_diagonal, zeros, identity as unit, logical_or
-from pairs import Pair, cons
+from weightings import Weighting
+from adjacencies import *
 from math import sqrt
+from operator import mul
 
 
-class Simulator:
+class FermiHubbardSystem:
 
 	# I remember the physical parameters of the Fermi-Hubbard model, and compute the derivatives of the Greens' function and weight.
 
 	"""Parameters: repulsion, hopping, chemical_potential
 	
-	The state is represented as a tuple of the weight, and a 2xsitesxsites array of the up and down greens functions"""
+	The state is represented as a Weighting, whose value is a 2x[sites]x[sites] array of the up and down greens functions.  Here [sites] is the dimensions of the grid."""
 
 	def __init__(self, model = None, **parameters):
 		if model is not None:
@@ -35,40 +37,43 @@ class Simulator:
 				self.repulsion_terms(normal_greens, spin) \
 				- self.chemical_potential \
 				+ f * sqrt(2*abs(self.repulsion)) * noise)
-				
-	def greens_dot(self, normal_greens, spin, noise):
-		n = normal_greens[spin,:,:]
-		noise1 = noise[:len(noise)//2]
-		noise2 = noise[-(len(noise)//2):]
-		particles = mat(n)
-		holes = mat(unit_like(n) - n)
-		delta1 = mat(self.delta(normal_greens, spin, noise1))
-		delta2 = mat(self.delta(normal_greens, spin, noise2))
-		return 0.5*(holes*delta1*particles + particles*delta2*holes)
-
-	def weight_log_dot(self, normal_greens):
-		return self.hopping * (diagonal(normal_greens[0,:,:], 1) + diagonal(normal_greens[0,:,:], -1) + diagonal(normal_greens[1,:,:], 1) + diagonal(normal_greens[1,:,:], -1)).sum() \
-			+ self.repulsion * (normal_greens[0,:,:]*normal_greens[1,:,:]).sum() \
-			- self.chemical_potential * ( diagonal(normal_greens[0,:,:]) + diagonal(normal_greens[1,:,:]) ).sum()
-			
+							
 	def derivative(self, time, state, noise):
-		# state is a pair of weight and Greens' functions
-		return Pair(state.car*self.weight_log_dot(state.cdr), array([self.greens_dot(state.cdr, 0, noise), self.greens_dot(state.cdr, 1, noise)]))
+	
+		greens = state.mean
+	
+		def greens_dot(spin):
+			n = normal_greens[spin,:,:]
+			noise1 = noise[:len(noise)//2]
+			noise2 = noise[-(len(noise)//2):]
+			particles = mat(n)
+			holes = mat(unit_like(n) - n)
+			delta1 = mat(self.delta(normal_greens, spin, noise1))
+			delta2 = mat(self.delta(normal_greens, spin, noise2))
+			return 0.5*(holes*delta1*particles + particles*delta2*holes)
+	
+		weight_log_dot = \
+			self.hopping * sum([greens[(0,)+i+j] + greens[(1,)+i+j] for i, j in adjacencies(self.sites)]) \
+				+ self.repulsion * (greens[0,::]*greens[1,::]).sum() \
+				- self.chemical_potential * sum([greens[(0,)+i+i] + [greens[(1,)+i+i] for i in sites(self.sites)])
+				
+		return Weighting( \
+			array([greens_dot(0), greens_dot(1)]), \
+			weight = state.weight*weight_log_dot)
 		
 	def noise_required(self, state):
-		greens = state.cdr
-		return range(2*greens.shape[2])
-		
-	def weight(self, state):
-		return state[0]
+		return range(2*reduce(mul, self.sites))
 		
 	def moments(self, state):
 		# The moments to be collected are the Green's functions
-		return state.cdr
+		return state.mean
 
 	def initial(self):
-		id = unit(self.sites[0])
-		return Pair(1.0, array([id, id]))
+		"Answer the state at infinite temperature"
+		id = zeros(self.sites*2)
+		for i in sites(self.sites):
+			id[i*2] = 1
+		return Weighting(array([id, id]))
 		
 			
 		
