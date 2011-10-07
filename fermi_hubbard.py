@@ -10,7 +10,7 @@ class FermiHubbardSystem:
 
 	# I remember the physical parameters of the Fermi-Hubbard model, and compute the derivatives of the Greens' function and weight.
 
-	"""Parameters: repulsion, hopping, chemical_potential
+	"""Parameters: sites, repulsion, hopping, chemical_potential
 	
 	The state is represented as a Weighting, whose value is a 2x[sites]x[sites] array of the up and down greens functions.  Here [sites] is the dimensions of the grid."""
 
@@ -18,13 +18,13 @@ class FermiHubbardSystem:
 		if model is not None:
 			self.__dict__ = model.__dict__.copy()
 		self.__dict__.update(parameters)
-		
-	def repulsion_terms(self, normal_greens, spin):
-		straight = diagonal(normal_greens[spin,:,:])
-		flipped = diagonal(normal_greens[1-spin,:,:])
-		return self.repulsion * flipped - abs(self.repulsion) * (0.5 - straight)
 
 	def delta(self, normal_greens, spin, noise):
+		
+		def repulsion(self, site):
+			return self.repulsion * greens[(1-spin,)+2*site] \
+				- abs(self.repulsion) * (0.5 - greens[(spin,)+2*site])
+
 		sites = normal_greens.shape[1]
 		if spin == 1:
 			f = 1
