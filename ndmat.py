@@ -1,4 +1,5 @@
 # Matrices with multipart indices
+# Currently broken
 
 from numpy import array, tensordot, zeros
 from unittest import TestCase, main as run_tests
@@ -7,6 +8,9 @@ from adjacencies import *
 class ndmat:
 	def __init__(self, array_like):
 		self.elements = array(array_like)
+		
+	def __array__(self):
+		return self.elements
 		
 	def __eq__(self, other):
 		return (self.elements == other.elements).all()
@@ -26,10 +30,10 @@ class ndmat:
 	def __sub__(self, other):
 		return ndmat(self.elements - other.elements)
 
-	def __getattr__(self, indices):
+	def __getitem__(self, indices):
 		return self.elements[indices]
 
-	def __setattr__(self, indices, value):
+	def __setitem__(self, indices, value):
 		self.elements[indices] = value
 		
 		
@@ -46,6 +50,11 @@ class AccessTest(TestCase):
 	def testSet(self):
 		self.A[1,1] = 7
 		self.assertEqual(self.A[1,1], 7)
+		
+	def testTuple(self):
+		i = (0,1)
+		self.A[i] = 13
+		self.assertEqual(self.A[i], 13)
 
 class IdentityTest(TestCase):
 	def setUp(self):
