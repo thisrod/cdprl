@@ -18,11 +18,17 @@ class ndmat:
 	def __mul__(self, other):
 		"""Shapes go as [i, j, ..., n, m, ...] * [n, m, ..., p, q, ...] = [i, j, ..., p, q, ...]"""
 		
-		n = len(self.elements.shape)
-		return ndmat(tensordot(self.elements, other.elements, (range(n/2, n), range(n/2))))
+		if isinstance(other, ndmat):
+			n = len(self.elements.shape)
+			return ndmat(tensordot(self.elements, other.elements, (range(n/2, n), range(n/2))))
+		else:
+			return self.elements * other
 		
 	# There follows a bunch of boilerplate to proxy for elements,
-	# because Smalltalk 80 is still in the future of Python 2010.
+	# because Smalltalk 80 is still in the future of Python 2011.
+	
+	def __rmul__(self, other): 
+		return other * self.elements
 	
 	def __add__(self, other):
 		return ndmat(self.elements + other.elements)
