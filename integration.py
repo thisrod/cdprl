@@ -12,14 +12,14 @@ class Integrator:
 		self.timestep = float(timestep)
 		self.noise = a_noise_source
 		
-	def integrate(self, initial_state, duration, record, **run_labels):
+	def integrate(self, initial_state, duration, record, *run_labels):
 		"""stochastically integrate a single sample, starting at time 0"""
 		t = 0
 		state = initial_state
 		next_sample_time = 0
 		while t <= duration:
 			if t > (next_sample_time - 0.5*self.timestep):
-				record[t] = self.system.moments(state)
+				record[(t,) + run_labels] = self.system.moments(state)
 				next_sample_time = record.after(next_sample_time)
 			t, state = t + self.timestep, state + self.increment(t, state)
 

@@ -39,10 +39,15 @@ class IntegrationTest(TestCase):
 		self.integrator.integrate(self.system.initial(), 3.1, self.moments)
 		
 	def testSolution(self):
+		self.integrator.integrate(self.system.initial(), 3.1, self.moments)
 		for t in range(3):
 			exact = self.system.exact(t, self.noise)
 			computed = self.moments(t)
 			self.assertTrue(abs(computed - exact) < 0.05*abs(exact))
+			
+	def testLabels(self):
+		self.integrator.integrate(self.system.initial(), 3.1, self.moments, 1)
+		self.assertTrue((1,) in self.moments.results)
 			
 
 if __name__ == '__main__':

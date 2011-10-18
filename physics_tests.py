@@ -5,6 +5,7 @@ from math import sqrt
 from numpy import array, mat, diagonal, diagflat as make_diagonal, zeros, identity as unit, logical_or, isnan
 from unittest import TestCase, main as run_tests
 from pairs import Pair
+from weightings import Weighting
 		
 		
 # Test data
@@ -83,19 +84,6 @@ class TestRepulsionTerms(TestCase):
 		for sltr, greens, spin in specimens():
 			if logical_or(greens[0,:,:] == 0, greens[1,:,:] == 0).all():
 				self.assertTrue((sltr.repulsion_terms(greens, spin) == 0.5).all())
-
-
-class TestDelta(TestCase):
-
-	def testShape(self):
-		for sltr, greens, spin in specimens():
-			for noise in noise_specimens(greens.shape[1]):
-				self.assertTrue(sltr.delta(greens, spin, noise[:noise.size//2]).shape == greens[spin,:,:].shape)
-	
-	def testTridiagonal(self):
-		for sltr, greens, spin in specimens():
-			for noise in noise_specimens(greens.shape[1]):
-				self.assertTrue(is_tridiagonal(sltr.delta(greens, spin, noise[:noise.size//2])))
 				
 				
 class TestGreensDerivative(TestCase):
@@ -126,8 +114,8 @@ class TestWeightDerivative(TestCase):
 class TestFermiHubbardSystemInterface(TestCase):
 
 	def setUp(self):
-		self.sltr = FermiHubbardSystem(sites = [2], repulsion = 1, chemical_potential = 0.5, hopping = 2)
-		self.state = Pair(1, array([unit(5), unit(5)]))
+		self.sltr = FermiHubbardSystem(sites = [5], repulsion = 1, chemical_potential = 0.5, hopping = 2)
+		self.state = Weighting(array([unit(5), unit(5)]))
 	
 	def testNoise(self):
 		self.assertTrue(len(self.sltr.noise_required(self.state)) == 10)

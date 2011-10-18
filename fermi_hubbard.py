@@ -1,8 +1,9 @@
 from numpy.random import randn as normal_deviates
-from numpy import array, mat, diagonal, diagflat as make_diagonal, zeros, identity as unit, logical_or
+from numpy import array, zeros, identity as unit, logical_or
 from weightings import Weighting
+from ndmat import ndmat
 from adjacencies import *
-from math import sqrt
+from math import sqrt, copysign
 from operator import mul
 
 
@@ -12,50 +13,50 @@ class FermiHubbardSystem:
 
 	"""Parameters: sites, repulsion, hopping, chemical_potential
 	
-	The state is represented as a Weighting, whose value is a 2x[sites]x[sites] array of the up and down greens functions.  Here [sites] is the dimensions of the grid."""
+	The state is represented as a Weighting, whose value is a 2x[sites]x[sites] array of the up and down greens functions.  Here [sites] is the dimensions of the grid, stored as a tuple."""
 
 	def __init__(self, model = None, **parameters):
 		if model is not None:
 			self.__dict__ = model.__dict__.copy()
 		self.__dict__.update(parameters)
-
-	def delta(self, normal_greens, spin, noise):
 		
-		def repulsion(self, site):
-			return self.repulsion * greens[(1-spin,)+2*site] \
-				- abs(self.repulsion) * (0.5 - greens[(spin,)+2*site])
-
-		sites = normal_greens.shape[1]
-		if spin == 1:
-			f = 1
-		else:
-			f = -self.repulsion/abs(self.repulsion)
-		return \
-			make_diagonal([self.hopping]*(sites-1), 1) \
-			+ make_diagonal([self.hopping]*(sites-1), -1) \
-			- make_diagonal( \
-				self.repulsion_terms(normal_greens, spin) \
-				- self.chemical_potential \
-				+ f * sqrt(2*abs(self.repulsion)) * noise)
+		self.sites = tuple(self.sites)
 							
 	def derivative(self, time, state, noise):
 	
 		greens = state.mean
+		noise = array(noise).reshape((2,)+self.sites)
 	
 		def greens_dot(spin):
-			n = normal_greens[spin,:,:]
-			noise1 = noise[:len(noise)//2]
-			noise2 = noise[-(len(noise)//2):]
-			particles = mat(n)
-			holes = mat(unit_like(n) - n)
-			delta1 = mat(self.delta(normal_greens, spin, noise1))
-			delta2 = mat(self.delta(normal_greens, spin, noise2))
-			return 0.5*(holes*delta1*particles + particles*delta2*holes)
+			n = greens[spin,::]
+			
+			particles = ndmat(n)
+			holes = ndmat(unit_like(n) - n)
+			
+			return 0.5*(holes*delta(spin, 0)*particles + particles*delta(spin, 1)*holes)
 	
+		def delta(spin, r):
+			
+			def repulsion(site):
+				return self.repulsion * greens[(1-spin,)+2*site] \
+					- abs(self.repulsion) * (0.5 - greens[(spin,)+2*site])
+	
+			f = 1 if spin == 1 else copysign(1, -self.repulsion)
+				
+			result = ndmat(zeros(2*self.sites))
+			for i in sites(self.sites):
+				result[2*i] = repulsion(i) \
+					+ f * sqrt(2*abs(self.repulsion)) * noise[(r,)+i] \
+					- self.chemical_potential
+			for i, j in adjacencies(self.sites):
+				assert(i != j)
+				result[i+j] = self.hopping
+			return result
+
 		weight_log_dot = \
 			self.hopping * sum([greens[(0,)+i+j] + greens[(1,)+i+j] for i, j in adjacencies(self.sites)]) \
 				+ self.repulsion * (greens[0,::]*greens[1,::]).sum() \
-				- self.chemical_potential * sum([greens[(0,)+i+i] + [greens[(1,)+i+i] for i in sites(self.sites)])
+				- self.chemical_potential * sum([ greens[(0,)+i+i] + greens[(1,)+i+i] for i in sites(self.sites)])
 				
 		return Weighting( \
 			array([greens_dot(0), greens_dot(1)]), \
@@ -72,7 +73,7 @@ class FermiHubbardSystem:
 		"Answer the state at infinite temperature"
 		id = zeros(self.sites*2)
 		for i in sites(self.sites):
-			id[i*2] = 1
+			id[i*2] = 0.5
 		return Weighting(array([id, id]))
 		
 			
