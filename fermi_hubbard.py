@@ -5,6 +5,7 @@ from ndmat import ndmat
 from adjacencies import *
 from math import sqrt, copysign
 from operator import mul
+from itertools import product
 
 
 class FermiHubbardSystem:
@@ -96,3 +97,23 @@ def unit_like(array):
 	
 def mean(xs):
 	return sum(xs)/len(xs)
+
+def print_greens(greens):
+	print "\t\tUP\t\t"
+	for i in range(greens.shape[1]):
+		for ii in range(greens.shape[2]):
+			for j in range(greens.shape[3]):
+				for jj in range(greens.shape[4]):
+					print "%.2f\t" % (greens[0, i, j, ii, jj]),
+				print "\t",
+			print
+		print
+	print "\t\tDOWN\t\t"
+	for i in range(greens.shape[1]):
+		for ii in range(greens.shape[2]):
+			for j in range(greens.shape[3]):
+				for jj in range(greens.shape[4]):
+					print "%.2f\t" % (greens[1, i, j, ii, jj]),
+				print "\t",
+			print
+		print

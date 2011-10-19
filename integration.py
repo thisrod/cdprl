@@ -14,6 +14,7 @@ class Integrator:
 		
 	def integrate(self, initial_state, duration, record, *run_labels):
 		"""stochastically integrate a single sample, starting at time 0"""
+		self.noise.set_labels(run_labels)
 		t = 0
 		state = initial_state
 		next_sample_time = 0

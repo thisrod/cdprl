@@ -24,7 +24,7 @@ def specimens():
 	for sltr in simulator_specimens():
 		for greens in greens_specimens():
 			for spin in 0, 1:
-				yield sltr, greens, spin
+				yield sltr, Weighting(greens), spin
 				
 
 ## Tests of the Fermi-Hubbard simulator
@@ -98,7 +98,7 @@ class TestGreensDerivative(TestCase):
 		for sltr, greens, spin in specimens():
 			scaled_sltr = FermiHubbardSystem(sltr, repulsion = sltr.repulsion * 3)
 			for noise in noise_specimens(greens.shape[1]):
-					self.assertTrue((scaled_sltr.greens_dot(greens, spin, noise) == scaled_sltr.greens_dot(greens, spin, noise)).all())
+					self.assertTrue((scaled_sltr.derivative(0, greens, spin, noise).mean == scaled_sltr.derivative(greens, spin, noise).mean).all())
 
 
 class TestWeightDerivative(TestCase): 

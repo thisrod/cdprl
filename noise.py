@@ -12,7 +12,7 @@ class Noise:
 	
 	Subclasses need to override __init__, to handle their run labels, and derivatives, to generate the noise."""
 
-	def __init__(self, *run_labels):
+	def __init__(self):
 		raise(NotImplementedError)
 
 	def __call__(self, start, duration):
@@ -51,10 +51,13 @@ class DiscreteNoise(Noise):
 
 	"""This noise source seeds a Python PRNG for each process and run_labels, which generates independent derivatives for intervals of length timestep, starting from time 0."""
 
-	def __init__(self, timestep, *run_labels):
-		self.timestep, self.run_labels = timestep, run_labels
+	def __init__(self, timestep):
+		self.timestep = timestep
 		self.rngs = {}
 		self.installed_indices = self.step = None
+		
+	def set_labels(self, labels):
+		self.run_labels = labels
 	
 	def derivatives(self, index, start_time, duration):
 		if duration == 0: return 0

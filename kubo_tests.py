@@ -36,7 +36,6 @@ class IntegrationTest(TestCase):
 		self.noise = DiscreteNoise(timestep = 0.01)
 		self.system = KuboOscillator(resonance_frequency = 1)
 		self.integrator = SemiImplicitIntegrator(self.system, self.noise, timestep = 0.01)
-		self.integrator.integrate(self.system.initial(), 3.1, self.moments)
 		
 	def testSolution(self):
 		self.integrator.integrate(self.system.initial(), 3.1, self.moments)
@@ -47,7 +46,10 @@ class IntegrationTest(TestCase):
 			
 	def testLabels(self):
 		self.integrator.integrate(self.system.initial(), 3.1, self.moments, 1)
+		self.integrator.integrate(self.system.initial(), 3.1, self.moments, 2)
 		self.assertTrue((1,) in self.moments.results)
+		self.assertTrue((2,) in self.moments.results)
+		self.assertTrue(self.moments.results[(1,)](2).mean != self.moments.results[(2,)](2).mean)
 			
 
 if __name__ == '__main__':
