@@ -2,8 +2,7 @@
 #
 # resp, 2011-10-05
 
-from itertools import product
-from unittest import TestCase, main as run_tests
+from cdprl import *
 
 def adjacencies(dimensions):
 	"""Yield pairs of adjacent sites in the given grid"""

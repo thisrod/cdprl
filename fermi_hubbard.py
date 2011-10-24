@@ -1,12 +1,5 @@
-from numpy.random import randn as normal_deviates
-from numpy import array, zeros, identity as unit, logical_or
-from weightings import Weighting
-from ndmat import ndmat
-from adjacencies import *
-from math import sqrt, copysign
+from cdprl import *
 from operator import mul
-from itertools import product
-
 
 class FermiHubbardSystem:
 
