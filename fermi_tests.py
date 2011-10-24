@@ -48,6 +48,8 @@ class OneDTest(TestCase):
 
 class TwoDTest(TestCase):
 		
+	# case = TwoDTest('testSolution'); case.setUp()
+	# Edit s/self/case/g
 	def setUp(self):
 		self.sites = [2,2]
 		self.moments = Record(timestep = 1)

@@ -68,8 +68,12 @@ class FermiHubbardSystem:
 		return range(2*reduce(mul, self.sites))
 		
 	def moments(self, state):
-		# The moments to be collected are the Green's functions
-		return state.mean
+		# The moments to be collected are a 2x2 matrix of spin correlation functions, averaged over sites
+		corr = zeros([2,2])
+		for i in range(2):
+			for j in range(2):
+				corr[i,j] = (state.mean[i,::]*state.mean[j,::]).sum()
+		return corr / corr.size
 
 	def initial(self, filling):
 		"Answer the state at infinite temperature for given filling"
