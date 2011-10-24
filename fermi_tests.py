@@ -40,7 +40,7 @@ class OneDTest(TestCase):
 		self.integrator = SemiImplicitIntegrator(self.system, self.noise, timestep = 0.01)
 		
 	def testSolution(self):
-		self.integrator.integrate(self.system.initial(), 3.1, self.moments)
+		self.integrator.integrate(self.system.initial(0.5), 3.1, self.moments)
 		for t in range(3):
 			computed = self.moments(t)
 			self.assertFalse(isnan(computed).any())
@@ -49,13 +49,23 @@ class OneDTest(TestCase):
 class TwoDTest(TestCase):
 		
 	def setUp(self):
+		self.sites = [2,2]
 		self.moments = Record(timestep = 1)
 		self.noise = DiscreteNoise(timestep = 0.01)
-		self.system = FermiHubbardSystem(sites = [2,2], repulsion = 0.5, hopping = 0, chemical_potential = 0)
+		self.system = FermiHubbardSystem(sites = self.sites, repulsion = 0.5, hopping = 0, chemical_potential = 0)
 		self.integrator = SemiImplicitIntegrator(self.system, self.noise, timestep = 0.01)
+
+	def testFilling(self):
+		down = self.system.initial(0.3).mean[0,::]
+		up = self.system.initial(0.3).mean[1,::]
+		for i, j in product(sites(self.sites), sites(self.sites)):
+			expected = 0.3 if i == j else 0
+			self.assertEqual(up[i+j], expected)
+			self.assertEqual(down[i+j], expected)
+		
 		
 	def testSolution(self):
-		self.integrator.integrate
+		self.integrator.integrate(self.system.initial(0.5), 3.1, self.moments)
 		for t in range(3):
 			computed = self.moments(t)
 			self.assertFalse(isnan(computed).any())

@@ -39,6 +39,7 @@ class FermiHubbardSystem:
 		def delta(spin, r):
 			
 			def repulsion(site):
+			# FIXME: I'm slow
 				return self.repulsion * greens[(1-spin,)+2*site] \
 					- abs(self.repulsion) * (0.5 - greens[(spin,)+2*site])
 	
@@ -70,11 +71,11 @@ class FermiHubbardSystem:
 		# The moments to be collected are the Green's functions
 		return state.mean
 
-	def initial(self):
-		"Answer the state at infinite temperature"
+	def initial(self, filling):
+		"Answer the state at infinite temperature for given filling"
 		id = zeros(self.sites*2)
 		for i in sites(self.sites):
-			id[i*2] = 0.5
+			id[i*2] = filling
 		return Weighting(array([id, id]))
 		
 			
