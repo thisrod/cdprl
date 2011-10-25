@@ -11,6 +11,7 @@ from itertools import product
 class FermiHubbardSystem:
 
 	# I remember the physical parameters of the Fermi-Hubbard model, and compute the derivatives of the Greens' function and weight.
+	# Moments are a subclass responsibility.
 
 	"""Parameters: sites, repulsion, hopping, chemical_potential
 	
@@ -68,12 +69,7 @@ class FermiHubbardSystem:
 		return range(2*reduce(mul, self.sites))
 		
 	def moments(self, state):
-		# The moments to be collected are a 2x2 matrix of spin correlation functions, averaged over sites
-		corr = zeros([2,2])
-		for i in range(2):
-			for j in range(2):
-				corr[i,j] = (state.mean[i,::]*state.mean[j,::]).sum()
-		return corr / corr.size
+		raise 'Subclass responsibility'
 
 	def initial(self, filling):
 		"Answer the state at infinite temperature for given filling"
@@ -81,10 +77,31 @@ class FermiHubbardSystem:
 		for i in sites(self.sites):
 			id[i*2] = filling
 		return Weighting(array([id, id]))
-		
-			
-		
 
+
+class CorrelationFermiHubbard(FermiHubbardSystem):
+		
+	def moments(self, state):
+		# The moments to be collected are a 2x2 matrix of spin correlation functions, averaged over sites
+		corr = zeros([2,2])
+		for i in range(2):
+			for j in range(2):
+				corr[i,j] = (state.mean[i,::]*state.mean[j,::]).sum()
+		return corr / corr.size
+	
+	
+class GreensFermiHubbard(FermiHubbardSystem):
+		
+	def moments(self, state):
+		return state.mean
+
+def figure_1_system():
+	return CorrelationFermiHubbard(sites = [2], repulsion = 2, hopping = 0, chemical_potential = 1)
+
+def figure_1_system_g2(matrix):
+	return matrix[0,1]/matrix[0,0]**2
+	
+		
 def noise(sites, timestep):
 	return make_diagonal(normal_deviates(sites))/sqrt(timestep)
 	

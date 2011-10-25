@@ -36,7 +36,7 @@ class OneDTest(TestCase):
 	def setUp(self):
 		self.moments = Record(timestep = 1)
 		self.noise = DiscreteNoise(timestep = 0.01)
-		self.system = FermiHubbardSystem(sites = [2], repulsion = 0.5, hopping = 0, chemical_potential = 0)
+		self.system = GreensFermiHubbard(sites = [2], repulsion = 0.5, hopping = 0, chemical_potential = 0)
 		self.integrator = SemiImplicitIntegrator(self.system, self.noise, timestep = 0.01)
 		
 	def testSolution(self):
@@ -54,7 +54,7 @@ class TwoDTest(TestCase):
 		self.sites = [2,2]
 		self.moments = Record(timestep = 1)
 		self.noise = DiscreteNoise(timestep = 0.01)
-		self.system = FermiHubbardSystem(sites = self.sites, repulsion = 0.5, hopping = 0, chemical_potential = 0)
+		self.system = GreensFermiHubbard(sites = self.sites, repulsion = 0.5, hopping = 0, chemical_potential = 0)
 		self.integrator = SemiImplicitIntegrator(self.system, self.noise, timestep = 0.01)
 
 	def testFilling(self):
