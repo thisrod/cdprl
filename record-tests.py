@@ -56,7 +56,20 @@ class TestWeighted(TestCase):
 	def setUp(self):
 		self.specimen = Record(timestep = 1)
 		self.specimen[0, 'run1'] = (0.5, 7)
-		self.specimen[0, 'run2'] = (1.5, 13)
+		
+	def testMean(self):
+		self.assertTrue(self.specimen(0) == 7)
+		
+	def testZeroWeight(self):
+		self.specimen[0, 'run2'] = (0, 1000)
+		self.assertTrue(self.specimen(0) == 7)
+		
+	def testBetween(self):
+		self.specimen[0, 'run2'] = (0.5, 13)
+		self.assertTrue(self.specimen(0) > 7)
+		self.assertTrue(self.specimen(0) < 13)
+		
+		
 
 
 class TestTiming(TestCase):

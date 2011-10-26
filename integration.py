@@ -20,7 +20,7 @@ class Integrator:
 		next_sample_time = 0
 		while t <= duration:
 			if t > (next_sample_time - 0.5*self.timestep):
-				record[(t,) + run_labels] = self.system.moments(state)
+				record[(t,) + run_labels] = (state.weight, self.system.moments(state))
 				next_sample_time = record.after(next_sample_time)
 			t, state = t + self.timestep, state + self.increment(t, state)
 

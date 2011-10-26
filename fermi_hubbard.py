@@ -40,17 +40,18 @@ class FermiHubbardSystem:
 		def delta(spin, r):
 			
 			def repulsion(site):
-			# FIXME: I'm slow
+				"Compute |U|(sn_jj-n_jj+1/2)"
+				# FIXME: I'm slow
 				return self.repulsion * greens[(1-spin,)+2*site] \
-					- abs(self.repulsion) * (0.5 - greens[(spin,)+2*site])
+					+ abs(self.repulsion) * (0.5 - greens[(spin,)+2*site])
 	
 			f = 1 if spin == 1 else copysign(1, -self.repulsion)
 				
 			result = ndmat(zeros(2*self.sites))
 			for i in sites(self.sites):
-				result[2*i] = repulsion(i) \
-					+ f * sqrt(2*abs(self.repulsion)) * noise[(r,)+i] \
-					- self.chemical_potential
+				result[2*i] = -repulsion(i) \
+					- f * sqrt(2*abs(self.repulsion)) * noise[(r,)+i] \
+					+ self.chemical_potential
 			for i, j in adjacencies(self.sites):
 				assert(i != j)
 				result[i+j] = self.hopping
@@ -98,8 +99,8 @@ class GreensFermiHubbard(FermiHubbardSystem):
 def figure_1_system():
 	return CorrelationFermiHubbard(sites = [2], repulsion = 2, hopping = 0, chemical_potential = 1)
 
-def figure_1_system_g2(matrix):
-	return matrix[0,1]/matrix[0,0]**2
+def figure_1_g2(matrix):
+	return matrix[0,1]/matrix[0,0]
 	
 		
 def noise(sites, timestep):

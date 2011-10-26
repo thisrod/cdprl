@@ -3,34 +3,12 @@ from fermi_hubbard import *
 from integration import *
 from noise import *
 from math import sqrt
-from numpy import array, mat, diagonal, diagflat as make_diagonal, zeros, identity as unit, logical_or, isnan
+from numpy import array, mat, diagonal, diagflat as make_diagonal, zeros, identity as unit, logical_or, isnan, allclose
+from numpy.random import normal
 from unittest import TestCase, main as run_tests
-from pairs import Pair
 from weightings import Weighting
 		
 		
-# Test data
-
-def greens_specimens():
-	for it in [unit(2), unit(2)], [zero(2), unit(2)], [unit(2), zero(2)]:
-		yield array(it)
-		
-def simulator_specimens():
-	yield FermiHubbardSystem(sites = [2], repulsion = 1, chemical_potential = 0.5, hopping = 2)
-	
-def noise_specimens(sites):
-	yield zeros(2*sites)
-	
-def specimens():
-	for sltr in simulator_specimens():
-		for greens in greens_specimens():
-			for spin in 0, 1:
-				yield sltr, Weighting(greens), spin
-				
-
-		
-
-
 class OneDTest(TestCase):
 		
 	def setUp(self):
@@ -71,6 +49,48 @@ class TwoDTest(TestCase):
 		for t in range(3):
 			computed = self.moments(t)
 			self.assertFalse(isnan(computed).any())
+			
+			
+class TestDerivative(TestCase):
+	
+	def setUp(self):
+		self.system = figure_1_system()
+		
+	def testZeroGreens(self):
+		state = self.system.initial(0)
+		no_noise = zeros(len(self.system.noise_required(state)))
+		deriv = self.system.derivative(0, state, no_noise).mean
+		self.assertTrue((deriv == 0).all())
+		
+	def testFullGreens(self):
+		state = self.system.initial(1)
+		no_noise = zeros(len(self.system.noise_required(state)))
+		deriv = self.system.derivative(0, state, no_noise).mean
+		self.assertTrue((deriv == 0).all())
+		
+		
+class TestDerivativeScaling(TestCase):
+
+	def setUp(self):
+		self.original = FermiHubbardSystem(sites = [2,2], repulsion = 3, hopping = sqrt(3), chemical_potential = 0.5*3)
+		self.U_scaled = FermiHubbardSystem(sites = [2,2], repulsion = 7, hopping = sqrt(7), chemical_potential = 0.5*7)
+		offset = normal(0.1, 0.01, (2,2))
+		self.state = self.original.initial(0.5) + Weighting(array([offset, offset]))
+		self.no_noise = zeros(len(self.original.noise_required(self.state)))
+		
+	def testUScaling(self):
+		deriv = self.original.derivative(0, self.state, self.no_noise).mean
+		scaled = self.U_scaled.derivative(0, self.state, self.no_noise).mean
+		self.assertTrue(allclose(scaled, deriv*sqrt(7./3.)))
+		
+		
+## Manual testing assistance
+		
+def integrate_labels(integrator, initial, duration, record, labels):
+	for i in labels:
+		integrator.integrate(initial, duration, record, i)
+		print i
+		
 
 if __name__ == '__main__':
 	run_tests()
