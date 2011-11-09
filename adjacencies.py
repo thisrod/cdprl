@@ -2,8 +2,7 @@
 #
 # resp, 2011-10-05
 
-from itertools import product
-from unittest import TestCase, main as run_tests
+from namespace import *
 
 def adjacencies(dimensions):
 	"""Yield pairs of adjacent sites in the given grid"""
@@ -18,7 +17,7 @@ def adjacencies(dimensions):
 def sites(dimensions):
 	"""Yield indices of sites in a grid of size dimensions"""
 	axes = [xrange(n) for n in dimensions]
-	return product(*axes)
+	return cartesian_product(*axes)
 	
 	
 ### Tests	

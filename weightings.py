@@ -1,4 +1,4 @@
-from numpy import allclose
+from namespace import *
 
 class Weighting:
 	

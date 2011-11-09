@@ -1,5 +1,5 @@
+from namespace import *
 from random import getstate, setstate, seed, normalvariate
-from math import sqrt
 
 
 class Noise:

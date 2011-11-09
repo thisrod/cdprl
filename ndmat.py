@@ -1,8 +1,6 @@
 # Matrices with multipart indices
-# Currently broken
 
-from numpy import array, tensordot, zeros
-from unittest import TestCase, main as run_tests
+from namespace import *
 from adjacencies import *
 
 class ndmat:

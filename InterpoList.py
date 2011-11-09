@@ -10,11 +10,10 @@
 	   Use for any purpose under one condition: I am not to blame for anything.
 """
 
+from namespace import *
 from bisect import bisect, bisect_left
-from math import fabs
 import string
 from collections import MutableMapping, Callable
-from unittest import TestCase, main as run_tests
 
 class InterpoList(MutableMapping, Callable):
 	"""

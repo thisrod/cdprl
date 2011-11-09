@@ -1,11 +1,13 @@
-from numpy.random import randn as normal_deviates
-from numpy import array, zeros, identity as unit, logical_or
+"""
+Represent a grid of sites, some of which are occupied by spin-1/2 fermions.  The representation comprises greens functions for spin up and spin down at each site.
+
+Compute the time derivative and moments of the greens functions.
+"""
+
+from namespace import *
 from weightings import Weighting
 from ndmat import ndmat
 from adjacencies import *
-from math import sqrt, copysign
-from operator import mul
-from itertools import product
 
 
 class FermiHubbardSystem:

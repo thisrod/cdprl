@@ -1,7 +1,11 @@
+"""
+Semi implicit integration, and storage of results.
+"""
+
+from namespace import *
 from collections import MutableMapping, Callable
 from InterpoList import InterpoList as Interpolation
 from weightings import Weighting
-from numpy import array
 
 # StepwiseIntegrator computes steps with the increment method, which must be overridden by subclasses.
 
