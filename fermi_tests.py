@@ -1,4 +1,6 @@
 # python fermi_tests.py
+from namespace import *
+# FIXME delete following
 from fermi_hubbard import *
 from integration import *
 from noise import *
@@ -13,7 +15,7 @@ class OneDTest(TestCase):
 		
 	def setUp(self):
 		self.moments = Record(timestep = 1)
-		self.noise = DiscreteNoise(timestep = 0.01)
+		self.noise = DiscreteNoise()
 		self.system = GreensFermiHubbard(sites = [2], repulsion = 0.5, hopping = 0, chemical_potential = 0)
 		self.integrator = SemiImplicitIntegrator(self.system, self.noise, timestep = 0.01)
 		
@@ -31,14 +33,14 @@ class TwoDTest(TestCase):
 	def setUp(self):
 		self.sites = [2,2]
 		self.moments = Record(timestep = 1)
-		self.noise = DiscreteNoise(timestep = 0.01)
+		self.noise = DiscreteNoise()
 		self.system = GreensFermiHubbard(sites = self.sites, repulsion = 0.5, hopping = 0, chemical_potential = 0)
 		self.integrator = SemiImplicitIntegrator(self.system, self.noise, timestep = 0.01)
 
 	def testFilling(self):
 		down = self.system.initial(0.3).mean[0,::]
 		up = self.system.initial(0.3).mean[1,::]
-		for i, j in product(sites(self.sites), sites(self.sites)):
+		for i, j in cartesian_product(sites(self.sites), sites(self.sites)):
 			expected = 0.3 if i == j else 0
 			self.assertEqual(up[i+j], expected)
 			self.assertEqual(down[i+j], expected)
