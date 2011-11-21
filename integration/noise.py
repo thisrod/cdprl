@@ -1,97 +1,62 @@
 from namespace import *
-from random import getstate, setstate, seed, normalvariate
+from numpy.random.mtrand import RandomState
+from copy import copy
 
 
-class Noise:
+class Noise(object):
 
 	"""I am the abstract base class for noise sources.
 	
-	If x is a noise source, x[i] is the ith process, and x[i](t, dt) is its average derivative from t to t+dt.  This can also be written x(t, dt)[i], because x(t, dt) is a sequence of the derivatives of all processes.
+	If x is a noise source, x[i,j,...] is a Wiener process, and x[i,j,...](t, dt) is its average derivative from t to t+dt.  This can also be written x(t, dt)[i, j, ...], because x(t, dt) is a collection of the derivatives of all processes.  When a time interval and a finite sub-array have been specified, the noise source returns an ndarray of derivatives.  Note that subscripting a single process returns a singleton ndarray, not a float.
 	
 	As a special case, x(t, 0) is zero.  This ensures dx = 0 when dt = 0, when there's a 0*Infinity ambiguity.  
 	
-	Subclasses need to override __init__, to handle their run labels, and derivatives, to generate the noise."""
+	Subclasses need to extend __init__, to handle their seeds and numerical parameters, and derivatives, to generate the noise."""
 
 	def __init__(self):
-		raise(NotImplementedError)
+		self.start = None
+		self.duration = None
+		self.bounds = None
 
 	def __call__(self, start, duration):
-		return IntervalSpecialisedNoise(self, start, duration)
+		instance = copy(self)
+		instance.start, instance.duration = start, duration
+		return instance.eval()
 		
 	def __getitem__(self, indices):
-		return ProcessSpecialisedNoise(self, indices)
+		# FINDOUT the standard way of normalising indices to slices.
+		if not isinstance(indices, tuple):
+			indices = (indices,)
+		instance = copy(self)
+		instance.bounds = indices
+		return instance.eval()
 		
-	def derivatives(self, indices, start, duration):
-		"""Return a tuple of average derivatives for processes in the stride or number indices, from start, over duration."""
+	def eval(self):
+		if self.start is None or self.duration is None or self.bounds is None:
+			return self
+		else:
+			return self.derivatives(self.bounds, self.start, self.duration)
+		
+	def derivatives(self, bounds, start, duration):
+		"""Return an ndarray of average derivatives for processes within bounds, from start, over duration.  Bounds is a tuple of integers or strides."""
 		raise(NotImplementedError)
-		
-
-class IntervalSpecialisedNoise:
-
-	def __init__(self, noise, start, duration):
-		self.noise = noise
-		self.start = start
-		self.duration = duration
-		
-	def __getitem__(self, indices):
-		return self.noise.derivatives(indices, self.start, self.duration)
-		
-	
-class ProcessSpecialisedNoise:
-
-	def __init__(self, noise, indices):
-		self.noise = noise
-		self.indices = indices
-	
-	def __call__(self, start, duration):
-		return self.noise.derivatives(self.indices, start, duration)
 		
 		
 class DiscreteNoise(Noise):
 
-	"""This noise source seeds a Python PRNG for each process and run_labels, which generates independent derivatives for intervals of length timestep, starting from time 0."""
+	"""This noise source lazily seeds a Python PRNG for each process, which generates independent derivatives for intervals of length timestep, starting from time 0.  I've given up on making this reproducible for now."""
 
-	def __init__(self, timestep):
-		self.timestep = timestep
-		self.rngs = {}
-		self.installed_indices = self.step = None
+	def __init__(self):
+		Noise.__init__(self)
+		self.rng = RandomState()
 		
-	def set_labels(self, labels):
-		self.run_labels = labels
+	def set_labels(self, labels): pass
 	
-	def derivatives(self, index, start_time, duration):
-		if duration == 0: return 0
-		start = int(round(start_time / self.timestep))
-		steps = int(round(duration / self.timestep))
-		
-		# only handle one index for now
-		self.install(index)
-		self.advance(start)
-		mean = sum([self.step_derivative() for i in range(steps)]) / steps
-		return mean
-		
-	def install(self, indices):
-		if self.installed_indices == indices: return
-		self.rngs[self.installed_indices] = (getstate(), self.step)
-		if indices not in self.rngs:
-			self.initialize(indices)
-		else:
-			state, self.step = self.rngs[indices]
-			setstate(state)
-			self.installed_indices = indices
-				
-	def advance(self, start):
-		if self.step > start:
-			self.initialize(self.installed_indices)
-		while self.step < start:
-			normalvariate(0, 1)
-			self.step = self.step + 1
-			
-	def initialize(self, indices):
-		seed((self.run_labels, indices))
-		self.installed_indices = indices
-		self.step = 0
-		
-	def step_derivative(self):
-		self.step = self.step + 1
-		return normalvariate(mu = 0, sigma = 1/sqrt(self.timestep))
+	def derivatives(self, bounds, tstart, duration):
+		def deoffset(i):
+			if isinstance(i, slice):
+				return i.stop - i.start
+			else:
+				return None
+		bounds = [i for i in map(deoffset, bounds) if i is not None]
+		return normal_deviates(0, 1/sqrt(duration), bounds)
