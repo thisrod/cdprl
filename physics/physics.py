@@ -14,14 +14,20 @@ class physicalState(object):
 
 class stateEnsemble(object):
 	"""I store a representation of a weighted ensemble of states."""
-
-	def increment(self, step):
-		"An object that can be added to me to obtain a state step in the future."
+	
+	def __init__(self, system, size):
+		"""Subclasses should provide methods to initialise the representations for a well known state.  Integrators can assign self.noise directly."""
+		self.system = system
+		self.size = size
+		self.time = 0.
+		self.representations = None
+		self.weights = ones((size,))
 		
-	def __add__(self, other):
-		assert self.system == other.system
-		result = copy(self)
-		result.time += other.time
-		result.representations += other.representations
-		result.weights += other.weights
-		return result
+	def advanced(self, step, state = None):
+		if state is None: state = self
+		final = copy(self)
+		final.time += step
+		noise = self.noise.derivative(self.time, step)
+		final.representations = self.representations + state.derivative(noise)
+		final.weights = self.weights*(1 + state.weight_log_derivative(noise))
+		return final

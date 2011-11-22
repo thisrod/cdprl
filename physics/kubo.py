@@ -14,24 +14,26 @@ class KuboOscillator(physicalSystem):
 
 
 class KuboAmplitudes(stateEnsemble):
-	def __init__(self, system, initial_amplitude, size):
-		self.system = system
-		self.time = 0
-		self.amplitudes = array((initial_amplitude,)*size)
-		self.weights = ones(size)
+
+	def set_amplitude(self, x0):
+		self.representations = empty_array(self.size)
+		self.representations[:] = x0
+		
+	def derivative(self, noise):
+		return 1j*self.representations*(self.system.w + noise[0:self.size])
+		
+	def weight_log_derivative(self, noise):
+		return zeros_like(self.weights)
+		
+	def advanced_exactly(self, duration):
+		final = copy(self)
+		final.time += duration
+		noise = self.noise.derivative(self.time, duration)	# CHECKME
+		final.representations =  self.representations * \
+			exp(1j * (self.system.w + noise[0:self.size]) * duration)
+		return final
 		
 	def amplitude_moment(self, power):
 		total = self.weights*self.amplitudes**power
 		w = sum(self.weights)
 		return weighting(total/w, w)
-		
-	def weight_log_derivative(self):
-		return zeros_like(self.weights)
-		
-		
-		
-		
-class ExactKuboIntegrator(integrator):
-	"""I advance the amplitudes by the exact exponential of W(t)."""
-	
-	pass
