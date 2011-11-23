@@ -1,9 +1,8 @@
 """System and representation for the Kubo oscillator.  To be made parallel, as a CUDA exercise."""
 
-from namespace import *
-from physics import *
+from dynamics import *
 
-class KuboOscillator(physicalSystem):
+class KuboOscillator(object):
 	def __init__(self, resonance_frequency):
 		self.w = resonance_frequency
 
@@ -21,9 +20,6 @@ class KuboAmplitudes(stateEnsemble):
 		
 	def derivative(self, noise):
 		return 1j*self.representations*(self.system.w + noise[0:self.size])
-		
-	def weight_log_derivative(self, noise):
-		return zeros_like(self.weights)
 		
 	def advanced_exactly(self, duration):
 		final = copy(self)
