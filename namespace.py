@@ -7,5 +7,6 @@ from numpy.random import normal as normal_deviates
 from math import fabs, sqrt, copysign
 
 from operator import mul
+from copy import copy
 from itertools import product as cartesian_product
 from unittest import TestCase, main as run_tests

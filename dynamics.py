@@ -1,5 +1,7 @@
 """Data types and integration procedures for physical systems."""
 
+from namespace import *
+
 class ensemble(object):
 	"""I store a weighted ensemble of states of a physical system, and context such as the time and noise processes corresponding to my elements.  I compute derivatives and moments of the states."""
 	
@@ -97,8 +99,7 @@ class noise(object):
 
 	"""Infinite array of Wiener processes.  This can be subscripted, to select specific processes.  It can also be called, to set the time and duration.  When enough parameters have been set, an ndarray of derivatives is returned."""
 	
-	def __init__(self, shape):
-		self.shape = shape		# The shape of the derivative array for each ensemble element
+	def __init__(self):
 		self.start = None
 		self.duration = None
 		self.bounds = None		# This will become a slice object
@@ -113,40 +114,41 @@ class noise(object):
 		raise "Subclass responsibility"
 		
 	def __call__(self, start, duration):
-		if (start != self.start or duration != self.duration):
-			raise "Contradiction"
+		assert self.start is None or start != self.start
+		assert self.duration is None or duration != self.duration
 		instance = copy(self)
 		instance.start, instance.duration = start, duration
 		return instance.eval()
 		
 	def __getitem__(self, indices):
+		"I only support indexing by slices.  Access to individual elements is though the ndarray I generate."
+		if isinstance(indices, int) or isinstance(indices, slice):
+			indices = (indices,)
+		assert all([isinstance(i, slice) for i in indices])
 		instance = copy(self)
-		instance.subbound(indices)
+		if self.bounds is None:
+			instance.bounds = indices
+		else:
+			assert len(self.bounds) == len(indices)
+			instance.bounds = copy(self.bounds)
+			for i in range(len(indices)):
+				instance.subbound(i, indices[i])
 		return instance.eval()
 
 	def finite(self):
-		s = self.bounds
-		return s is not None and (isinstance(s, int) or (s.start is not None and s.stop is not None))
+		return self.bounds is not None and all([isinstance(s, int) or (s.start is not None and s.stop is not None) for s in self.bounds])
 		
-	def subbound(self, indices):
+	def subbound(self, i, index):
+		"Restrict my ith dimension by index"
 		# see assertions for implementation restrictions
-		if self.bounds is None:
-			self.bounds = indices
-		elif isinstance(self.bounds, int):
-			assert indices == 0
-		elif isinstance(indices, int):
-			assert self.bounds.stop >= self.bounds.start + indices
-			self.bounds = self.bounds.start + indices
-		else:
-			assert indices[i].step is None
-			assert self.bounds.stop - self.bounds.start <= indices.stop - indices.start
-			self.bounds = slice(indices.start + self.bounds.start, indices.stop + self.bounds.start)
+		assert index.step is None
+		assert self.bounds[i].stop - self.bounds[i].start <= index.stop - index.start
+		self.bounds[i] = slice(index.start + self.bounds[i].start, index.stop + self.bounds[i].start)
 
 class numpyNoise(noise):
 
 	"""Draws fresh normal deviates with every call.  This works provided no interval overlaps with any previously drawn interval."""
 	
 	def derivatives(self, bounds, start, duration):
-		s = self.bounds
-		dims = self.shape if isinstance(s, int) else (s.stop - s.start,) + self.shape
+		dims = [(s if isinstance(s, int) else s.stop - s.start) for s in self.bounds]
 		return normal_deviates(0, 1/sqrt(duration), dims)
