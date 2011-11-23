@@ -14,7 +14,7 @@ class ensemble(object):
 		self.size = size
 		self.time = 0.
 		self.noise = None			# To be initialised before integration
-		self.representations = None	# Subclasses will set this to a weightings
+		self.representations = self.weights = None	# Subclasses will set these
 		
 	def derivative(self, noise):
 		"The derivatives of the state representations, given that noise is the derivatives of their Wiener processes."
@@ -28,12 +28,19 @@ class ensemble(object):
 		"""An ensemble of my elements, at a time step in the future.
 
 		If an ensemble state is given, the derivatives are evaluated in that state instead of me.  This is useful for implicit integration."""
+
 		if state is None: state = self
 		final = copy(self)
 		final.time += step
-		xi = self.noise.derivative(self.time, step)
-		final.representations = self.representations.scale_adapt_add(step, state.derivative(xi), state.weight_log_derivative(xi))
+		xi = self.noise(self.time, step)
+		final.representations, final.weights = scale_adapt_add(step, state.derivative(xi), state.weight_log_derivative(xi))
 		return final
+		
+	def scale_adapt_add(self, scalar, absolute_values, relative_weights):
+		if self.weights is None:
+			return self.representations + scalar*absolute_values, None
+		else
+			return self.representations + scalar*absolute_values, self.weights*(scalar*relative_weights+1)
 
 
 class record(object):	
@@ -87,10 +94,7 @@ class weightings(object):
 		
 	def mean(self):
 		self.reduced().values[0,::]
-		
-	def scale_adapt_add(self, scalar, absolute_values, relative_weights):
-		return weightings(self.values + scalar*absolute_values, self.weights*(scalar*relative_weights+1))
-		
+				
 	def combine(self, other):
 		return weightings(concat(self.values, other.values), concat(self.weights, other.weights))
 

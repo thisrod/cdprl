@@ -12,7 +12,7 @@ class KuboOscillator(object):
 		return moment
 
 
-class KuboAmplitudes(stateEnsemble):
+class KuboAmplitudes(ensemble):
 
 	def set_amplitude(self, x0):
 		self.representations = empty_array(self.size)
