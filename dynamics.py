@@ -8,22 +8,20 @@ class ensemble(object):
 	def __init__(self, system, size):
 		"""System is an object that holds the physical parameters of the system, independent of representations.  Size is the number of elements in the ensemble."""
 		
-		# FIXME look in system in case of cantUnderstand
-		
 		self.system = system
 		self.size = size
 		self.time = 0.
 		self.noise = None			# To be initialised before integration
-		self.representations = self.weights = None	# Subclasses will set these
+		self.representations = None	# Subclasses will set these
+		
+	def __getattr__(self, name):
+		# Python's __getattr__ is the same as Smalltalk's notUnderstood:
+		return getattr(self.system, name)
 		
 	def derivative(self, noise):
 		"The derivatives of the state representations, given that noise is the derivatives of their Wiener processes."
 		raise "Subclass responsibility"
-				
-	def weight_log_derivative(self, noise):
-		"Subclasses may override this."
-		return zeros_like(self.representations.weights)
-
+		
 	def advanced(self, step, state = None):
 		"""An ensemble of my elements, at a time step in the future.
 
@@ -33,14 +31,36 @@ class ensemble(object):
 		final = copy(self)
 		final.time += step
 		xi = self.noise(self.time, step)
-		final.representations, final.weights = scale_adapt_add(step, state.derivative(xi), state.weight_log_derivative(xi))
+		final.representations = self.representations + step * state.derivative(xi)
+		return final
+
+			
+
+class weightedEnsemble(ensemble):
+	"""I store an ensemble with weights"""
+					
+	def weight_log_derivative(self, noise):
+		"Subclasses may override this."
+		raise "Subclass responsibility"
+		
+	def advanced(self, step, state = None):
+		"""An ensemble of my elements, at a time step in the future.
+
+		If an ensemble state is given, the derivatives are evaluated in that state instead of me.  This is useful for implicit integration."""
+
+		if state is None: state = self
+		final = copy(self)
+		final.time += step
+		xi = self.noise(self.time, step)
+		final.representations, final.weights = self.scale_adapt_add(step, state.derivative(xi), state.weight_log_derivative(xi))
 		return final
 		
 	def scale_adapt_add(self, scalar, absolute_values, relative_weights):
 		if self.weights is None:
 			return self.representations + scalar*absolute_values, None
-		else
+		else:
 			return self.representations + scalar*absolute_values, self.weights*(scalar*relative_weights+1)
+	
 
 
 class record(object):	
@@ -57,20 +77,21 @@ class record(object):
 	def add(self, state):
 		t = self.nearest(state.time)
 		for method in self.results:
-			m = state.getattr(method)()	# FIXME look for state.system.method too
+			m = getattr(state, method)()
 			self.results[method][t] = self.results[method][t].combine(m) if t in self.results[method] else m
 			
+	# FIXME: get rid of home-rolled rounding
 	def nearest(self, t):
 		"Answer recording time nearest t"
-		pass
+		return self.timestep * round(t/self.timestep)
 	
 	def next(self, t):
 		"Answer recording time after self.nearest(t)"
-		pass
+		return self.nearest(t) + self.timestep
 		
 	def after(self, t):
 		"Answer recording time at or after t"
-		pass
+		return t if self.nearest(t) == t else self.next(t)
 
 
 class weightings(object):
@@ -96,7 +117,7 @@ class weightings(object):
 		self.reduced().values[0,::]
 				
 	def combine(self, other):
-		return weightings(concat(self.values, other.values), concat(self.weights, other.weights))
+		return weightings(append(self.values, other.values), append(self.weights, other.weights))
 
 
 class noise(object):
