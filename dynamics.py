@@ -28,6 +28,7 @@ class ensemble(object):
 		If an ensemble state is given, the derivatives are evaluated in that state instead of me.  This is useful for implicit integration."""
 
 		if state is None: state = self
+		# FIXME Python's copy breaks when you override getattr, and prints warnings.  Wouldn't happen in Smalltalk.
 		final = copy(self)
 		final.time += step
 		xi = self.noise(self.time, step)
@@ -66,7 +67,9 @@ class weightedEnsemble(ensemble):
 class record(object):	
 	"""I store moments of a system being integrated.  Ensembles are incorporated with add(state).
 	
-	I am initialised with a timestep, and a list of moments.  The moments are methods of the state, which should return weightings of moments."""
+	I am initialised with a timestep, and a list of moments.  The moments are methods of the state, which should return weightings of moments.
+	
+	If the state doesn't have a certain moment, I ignore it.  This allows e.g. one run for exact results, and another for computed results."""
 	
 	def __init__(self, timestep, methods):
 		self.timestep = timestep
@@ -76,7 +79,8 @@ class record(object):
 		
 	def add(self, state):
 		t = self.nearest(state.time)
-		for method in self.results:
+		mtds = [m for m in self.results if hasattr(state, m)]
+		for method in mtds:
 			m = getattr(state, method)()
 			self.results[method][t] = self.results[method][t].combine(m) if t in self.results[method] else m
 			
@@ -101,16 +105,21 @@ class weightings(object):
 	# This could be made polymorphic with unweightings, if necessary for efficiency.
 	
 	def __init__(self, values, weights = None):
+		# handle singletons
+		if not isinstance(values, ndarray):
+			values = array([values])
 		if weights is None:
 			weights = ones(values.shape[0])
+		if not isinstance(weights, ndarray):
+			weights = array([weights])
 		assert weights.shape == values.shape[0:1]
 		self.values = values
 		self.weights = weights
 		
 	def reduced(self):
 		mean, net = average(self.values, 0, self.weights, True)
-		mean.shape.insert(0,1)
-		net.shape.insert(0,1)
+		mean = mean.reshape((1,) + mean.shape)
+		net = net.reshape((1,) + net.shape)
 		return weightings(mean, net)
 		
 	def mean(self):
@@ -128,6 +137,7 @@ class noise(object):
 		self.start = None
 		self.duration = None
 		self.bounds = None		# This will become a slice object
+		self.parent = self		# Where to memoise parameters
 		
 	def eval(self):
 		if self.start is None or self.duration is None or not self.finite():
@@ -170,10 +180,24 @@ class noise(object):
 		assert self.bounds[i].stop - self.bounds[i].start <= index.stop - index.start
 		self.bounds[i] = slice(index.start + self.bounds[i].start, index.stop + self.bounds[i].start)
 
+
 class numpyNoise(noise):
 
-	"""Draws fresh normal deviates with every call.  This works provided no interval overlaps with any previously drawn interval."""
+	"""Draws fresh normal deviates with every new interval.  Repeating the last call returns the same results, so that semi-implicit methods converge."""
+	
+	def __init__(self, *args):
+		noise.__init__(self, *args)
+		self.last_bounds = None
+		self.last_start = None
+		self.last_duration = None
 	
 	def derivatives(self, bounds, start, duration):
-		dims = [(s if isinstance(s, int) else s.stop - s.start) for s in self.bounds]
-		return normal_deviates(0, 1/sqrt(duration), dims)
+		if (bounds, start, duration) == (self.parent.last_bounds, self.parent.last_start, self.parent.last_duration):
+			return self.parent.last_result
+		dims = [(s if isinstance(s, int) else s.stop - s.start) for s in bounds]
+		if duration == 0.:
+			result = ones(dims)
+		else:
+			result = normal_deviates(0, 1/sqrt(duration), dims)
+		self.parent.last_bounds, self.parent.last_start, self.parent.last_duration, self.parent.last_result = bounds, start, duration, result
+		return result
