@@ -48,7 +48,7 @@ class TestTwice(SourceTest):
 	def testScaled(self):
 		first = self.source[0:5](0.5,0.1)
 		second = self.source[0:5](0.5,0.2)
-		self.assertTrue(allclose(first*sqrt(2), second))
+		self.assertTrue(allclose(first, second*sqrt(2)))
 			
 class TestSpecialCases(SourceTest):
 		

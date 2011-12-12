@@ -192,8 +192,8 @@ class numpyNoise(noise):
 		self.last_duration = None
 	
 	def derivatives(self, bounds, start, duration):
-		if (bounds, start, duration) == (self.parent.last_bounds, self.parent.last_start, self.parent.last_duration):
-			return self.parent.last_result
+		if (bounds, start) == (self.parent.last_bounds, self.parent.last_start):
+			return self.parent.last_result / sqrt(duration / self.parent.last_duration)
 		dims = [(s if isinstance(s, int) else s.stop - s.start) for s in bounds]
 		if duration == 0.:
 			result = ones(dims)
