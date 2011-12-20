@@ -39,7 +39,7 @@ class stepwise_integrator(object):
 	
 class semi_implicit_integrator(stepwise_integrator):
 
-	# This requires noise be somewhat reproducible.  See testTwice in noise_tests.py.
+	# This requires noise be somewhat reproducible.  See noise_tests.py:/TestTwice/.
 		
 	def advance(self, state):
 		halfstep = state
