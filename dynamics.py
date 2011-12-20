@@ -25,7 +25,7 @@ class ensemble(object):
 	def advanced(self, step, state = None):
 		"""An ensemble of my elements, at a time step in the future.
 
-		If an ensemble state is given, the derivatives are evaluated in that state instead of me.  This is useful for implicit integration."""
+		If an ensemble state is given, the derivatives are evaluated in that state instead of me.  This is useful for implicit integration.  The noise is always taken from me."""
 
 		if state is None: state = self
 		# FIXME Python's copy breaks when you override getattr, and prints warnings.  Wouldn't happen in Smalltalk.
@@ -36,6 +36,12 @@ class ensemble(object):
 		return final
 
 			
+class VCMEnsemble(ensemble):
+
+	"""I store a superposition of weighted coherent states, for variational propagation."""
+
+	
+
 
 class weightedEnsemble(ensemble):
 	"""I store an ensemble with weights"""
