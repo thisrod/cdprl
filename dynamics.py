@@ -38,7 +38,7 @@ class ensemble(object):
 			
 class VCMEnsemble(ensemble):
 
-	"""I store a superposition of weighted coherent states, for variational propagation.  Systems that will be simulated in this manner need to define methods ev_H and ev_a, that take vectors alpha_i* and alpha_j, and return <H_ij>/rho_ij and <\dot a_ij>/rho_ij.
+	"""I store a superposition of weighted coherent states, for variational propagation.  Systems that will be simulated in this manner need to define methods ev_H and ev_a, that compute the matrices <H_ij>/rho_ij and <\dot a_ij>/rho_ij.
 
 	The representation for ensemble size N and M modes is an Nx(M+1) ndarray."""
 
@@ -58,6 +58,16 @@ class VCMEnsemble(ensemble):
 		here_be_dragons = ndarray((n,n,mpp-1), dtype=result.dtype, buffer=result, offset=r+c, strides=(mpp*r, mpp*c, r+c))
 		here_be_dragons += 1
 		return result
+
+	def H(self):
+		edge = self.representations.copy()
+		edge[:,0] = 1
+		edge.shape = (1,) + edge.shape		# broadcast over i
+		Hij = self.ev_H()*exp(self.logrho())
+		Hij.shape = Hij.shape + (1,)		# broadcast over modes
+		result = empty_like(self.representations)
+		result[:,0] = Hij*edge.sum(1)
+		
 		
 	def logrho(self):
 		n = self.phis().size
