@@ -62,11 +62,10 @@ class VCMEnsemble(ensemble):
 	def H(self):
 		edge = self.representations.copy()
 		edge[:,0] = 1
-		edge.shape = (1,) + edge.shape		# broadcast over i
-		Hij = self.ev_H()*exp(self.logrho())
-		Hij.shape = Hij.shape + (1,)		# broadcast over modes
+		Hij = self.system.ev_H(self.alphas())*exp(self.logrho())
 		result = empty_like(self.representations)
-		result[:,0] = Hij*edge.sum(1)
+		result = (Hij[:,:,newaxis]*edge[newaxis,:,:]).sum(1)
+		return result
 		
 		
 	def logrho(self):
@@ -74,10 +73,22 @@ class VCMEnsemble(ensemble):
 		phii = self.phis().conj().reshape((n,1))
 		phij = self.phis().reshape((1,n))
 		return phii + phij + tensordot(self.alphas(), self.alphas().conj(), ((0),(0)))
-		
-		
 
+
+class QuarticOscillator(object):
+
+	"""Intended to be used as a state.
 	
+from dynamics import *
+state = VCMEnsemble(QuarticOscillator(), 5)
+state.representations = zeros((5,2))
+	"""
+	
+	def ev_H(self, alphas):
+		return outer(alphas.conj()**2, alphas**2)
+		
+	def ev_a(self):
+		pass
 
 
 class weightedEnsemble(ensemble):
